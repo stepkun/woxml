@@ -20,12 +20,11 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 Version 0.1.0 is a "takeover" of the xml_writer crate with some changes:
 
-### Added
-- add very pretty mode
-
 ### Changed
 - refactor coding to current `Rust` standards
 - provide dedicated constructors and mode setters
+- pretty mode puts also the end-tags in separate lines
+
 
 ### Removed
 - remove public access to internal variables
