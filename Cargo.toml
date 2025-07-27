@@ -10,6 +10,13 @@ license = "MIT/Apache-2.0"
 repository = "https://github.com/stepkun/woxml.git"
 homepage = "http://github.com/stepkun/woxml.git"
 documentation = "https://docs.rs/woxml/latest/woxml/"
+readme = "README.md"
+exclude = [
+    "benches/**",
+    "examples/**",
+    "tests/**",
+]
+
 
 [lib]
 name = "woxml"
