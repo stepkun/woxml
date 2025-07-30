@@ -16,6 +16,19 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
+## [0.1.1] - 2025-??-??
+
+### Added
+- missing namespace methods
+
+### Changed
+
+### Fixed
+- pretty output of text content
+- visibility of internal namespace field
+
+### Removed
+
 ## [0.1.0] - 2025-07-23
 
 Version 0.1.0 is a "takeover" of the xml_writer crate with some changes:

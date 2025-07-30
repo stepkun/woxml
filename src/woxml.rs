@@ -8,9 +8,10 @@ pub type Result = io::Result<()>;
 
 /// The XmlWriter himself
 pub struct XmlWriter<'a, W: Write> {
-    /// `bool` indicates self closing
+    /// element stack
+    /// `bool` indicates element having children
     stack: Vec<(&'a str, bool)>,
-    /// `bool` indicates self closing
+    /// namespace stack
     ns_stack: Vec<Option<&'a str>>,
     writer: Box<W>,
     opened: bool,
@@ -24,6 +25,8 @@ pub struct XmlWriter<'a, W: Write> {
     very_pretty: bool,
     /// if `true` current elem has children
     children: bool,
+    /// if `true` current elem has only text_content
+    text_content: bool,
     /// newline indicator
     newline: bool
 }
@@ -50,6 +53,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
             namespace: None,
             very_pretty: false,
             children: false,
+            text_content: false,
             newline: false,
         }
     }
@@ -65,6 +69,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
             namespace: None,
             very_pretty: true,
             children: false,
+            text_content: false,
             newline: false,
         }
     }
@@ -163,7 +168,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         self.write("/>")
     }
 
-    /// Write an element with inlined text (escaped)
+    /// Write an element with inlined text content (escaped)
     pub fn elem_text(&mut self, name: &str, text: &str) -> Result {
         self.close_elem()?;
         self.indent()?;
@@ -227,7 +232,10 @@ impl<'a, W: Write> XmlWriter<'a, W> {
                     if !children {
                         return Ok(())
                     }
-                    self.indent()?;
+                    if !self.text_content {
+                        self.indent()?;
+                    }
+                    self.text_content = false;
                 }
                 self.write("</")?;
                 self.ns_prefix(ns)?;
@@ -307,7 +315,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         Ok(())
     }
 
-    /// Write a text, escapes the text automatically
+    /// Write a text content, escapes the text automatically
     pub fn text(&mut self, text: &str) -> Result {
         self.children = true;
         self.close_elem()?;
@@ -317,9 +325,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
             self.stack.push(previous);
         }
         self.children = false;
-        if self.very_pretty {
-            self.indent()?;
-        }
+        self.text_content = true;
         self.escape(text, false)
     }
 
@@ -453,7 +459,7 @@ mod tests {
 
         let actual = xml.into_inner();
         println!("{}", str::from_utf8(&actual).unwrap());
-        assert_eq!(str::from_utf8(&actual).unwrap(), "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- have a nice day -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">\n    &apos;text&apos;\n  </st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>");
+        assert_eq!(str::from_utf8(&actual).unwrap(), "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- have a nice day -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>");
     }
 
     #[test]
