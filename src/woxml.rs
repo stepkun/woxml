@@ -81,9 +81,19 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         self.very_pretty = true;
     }
 
-    /// Set a namespace
+    /// Get the namespace
+    pub fn namespace(&self) -> Option<&'a str> {
+        self.namespace
+    }
+    
+    /// Set the namespace
     pub fn set_namespace(&mut self, namespace: &'a str) {
         self.namespace = Some(namespace);
+    }
+    
+    /// Remove/Unset the namespace
+    pub fn unset_namespace(&mut self) {
+        self.namespace = None;
     }
 
     /// Write the DTD

@@ -17,6 +17,14 @@ exclude = [
     "tests/**",
 ]
 
-
 [lib]
 name = "woxml"
+
+[[bench]]
+name = "woxml"
+harness = false
+
+[dependencies]
+
+[dev-dependencies]
+criterion = "0.7.0"
