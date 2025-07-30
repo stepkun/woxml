@@ -16,7 +16,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.1.1] - 2025-??-??
+## [0.1.1] - 2025-07-30
 
 ### Added
 - missing namespace methods
