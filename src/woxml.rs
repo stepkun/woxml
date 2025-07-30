@@ -14,21 +14,21 @@ pub struct XmlWriter<'a, W: Write> {
     /// namespace stack
     ns_stack: Vec<Option<&'a str>>,
     writer: Box<W>,
-    opened: bool,
-    /// If `true` it will indent all opening elements
-    pretty: bool,
     /// An XML namespace that all elements will be part of, unless `None`
     namespace: Option<&'a str>,
-    /// includes `pretty`, additional:
-    /// - puts closing elements into own line
+    /// If `true` it will
+    /// - indent all opening elements
+    /// - put closing elements into own line
     /// - elements without children are self-closing
     very_pretty: bool,
+    /// if `true` current elem is open
+    opened: bool,
+    /// newline indicator
+    newline: bool,
     /// if `true` current elem has children
     children: bool,
     /// if `true` current elem has only text_content
     text_content: bool,
-    /// newline indicator
-    newline: bool
 }
 
 impl<'a, W: Write> fmt::Debug for XmlWriter<'a, W> {
@@ -48,13 +48,12 @@ impl<'a, W: Write> XmlWriter<'a, W> {
             stack: Vec::new(),
             ns_stack: Vec::new(),
             writer: Box::new(writer),
-            opened: false,
-            pretty: false,
             namespace: None,
             very_pretty: false,
+            opened: false,
+            newline: false,
             children: false,
             text_content: false,
-            newline: false,
         }
     }
 
@@ -64,25 +63,22 @@ impl<'a, W: Write> XmlWriter<'a, W> {
             stack: Vec::new(),
             ns_stack: Vec::new(),
             writer: Box::new(writer),
-            opened: false,
-            pretty: true,
             namespace: None,
             very_pretty: true,
+            opened: false,
+            newline: false,
             children: false,
             text_content: false,
-            newline: false,
         }
     }
 
     /// Switch to `compact` mode
     pub fn set_compact_mode(&mut self) {
-        self.pretty = false;
         self.very_pretty = false;
     }
 
     /// Switch to `pretty` mode
     pub fn set_pretty_mode(&mut self) {
-        self.pretty = true;
         self.very_pretty = true;
     }
 
@@ -90,12 +86,12 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     pub fn namespace(&self) -> Option<&'a str> {
         self.namespace
     }
-    
+
     /// Set the namespace
     pub fn set_namespace(&mut self, namespace: &'a str) {
         self.namespace = Some(namespace);
     }
-    
+
     /// Remove/Unset the namespace
     pub fn unset_namespace(&mut self) {
         self.namespace = None;
@@ -117,11 +113,6 @@ impl<'a, W: Write> XmlWriter<'a, W> {
                 self.newline = true;
             }
             for _ in 0..indent {
-                self.write("  ")?;
-            }
-        } else if self.pretty && !self.stack.is_empty() {
-            self.write("\n")?;
-            for _ in 0..(indent) {
                 self.write("  ")?;
             }
         }
@@ -230,7 +221,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
                 if self.very_pretty {
                     // elem without children have been self-closed
                     if !children {
-                        return Ok(())
+                        return Ok(());
                     }
                     if !self.text_content {
                         self.indent()?;
@@ -400,35 +391,46 @@ mod tests {
     use super::XmlWriter;
     use std::str;
 
+    fn create_xml(
+        writer: &mut XmlWriter<'_, Vec<u8>>,
+        nsmap: &Vec<(Option<&'static str>, &'static str)>,
+    ) {
+        writer.begin_elem("OTDS");
+        writer.ns_decl(nsmap);
+        writer.comment("nice to see you");
+        writer.namespace = Some("st");
+        writer.empty_elem("success");
+        writer.begin_elem("node");
+        writer.attr_esc("name", "\"123\"");
+        writer.attr("id", "abc");
+        writer.attr("'unescaped'", "\"123\""); // this WILL generate invalid xml
+        writer.text("'text'");
+        writer.end_elem();
+        writer.namespace = None;
+        writer.begin_elem("stuff");
+        writer.cdata("blablab");
+        // xml.end_elem();
+        // xml.end_elem();
+        writer.close();
+        writer.flush();
+    }
+
     #[test]
     fn compact() {
         let nsmap = vec![
             (None, "http://localhost/"),
             (Some("st"), "http://127.0.0.1/"),
         ];
-        let mut xml = XmlWriter::compact_mode(Vec::new());
-        xml.begin_elem("OTDS");
-        xml.ns_decl(&nsmap);
-        xml.comment("nice to see you");
-        xml.namespace = Some("st");
-        xml.empty_elem("success");
-        xml.begin_elem("node");
-        xml.attr_esc("name", "\"123\"");
-        xml.attr("id", "abc");
-        xml.attr("'unescaped'", "\"123\""); // this WILL generate invalid xml
-        xml.text("'text'");
-        xml.end_elem();
-        xml.namespace = None;
-        xml.begin_elem("stuff");
-        xml.cdata("blablab");
-        // xml.end_elem();
-        // xml.end_elem();
-        xml.close();
-        xml.flush();
+        let mut writer = XmlWriter::compact_mode(Vec::new());
 
-        let actual = xml.into_inner();
+        create_xml(&mut writer, &nsmap);
+
+        let actual = writer.into_inner();
         println!("{}", str::from_utf8(&actual).unwrap());
-        assert_eq!(str::from_utf8(&actual).unwrap(), "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>");
+        assert_eq!(
+            str::from_utf8(&actual).unwrap(),
+            "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>"
+        );
     }
 
     #[test]
@@ -437,29 +439,16 @@ mod tests {
             (None, "http://localhost/"),
             (Some("st"), "http://127.0.0.1/"),
         ];
-        let mut xml = XmlWriter::pretty_mode(Vec::new());
-        xml.begin_elem("OTDS");
-        xml.ns_decl(&nsmap);
-        xml.comment("have a nice day");
-        xml.namespace = Some("st");
-        xml.empty_elem("success");
-        xml.begin_elem("node");
-        xml.attr_esc("name", "\"123\"");
-        xml.attr("id", "abc");
-        xml.attr("'unescaped'", "\"123\""); // this WILL generate invalid xml
-        xml.text("'text'");
-        xml.end_elem();
-        xml.namespace = None;
-        xml.begin_elem("stuff");
-        xml.cdata("blablab");
-        xml.end_elem();
-        xml.end_elem();
-        xml.close();
-        xml.flush();
+        let mut writer = XmlWriter::pretty_mode(Vec::new());
 
-        let actual = xml.into_inner();
+        create_xml(&mut writer, &nsmap);
+
+        let actual = writer.into_inner();
         println!("{}", str::from_utf8(&actual).unwrap());
-        assert_eq!(str::from_utf8(&actual).unwrap(), "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- have a nice day -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>");
+        assert_eq!(
+            str::from_utf8(&actual).unwrap(),
+            "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- nice to see you -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>"
+        );
     }
 
     #[test]

@@ -4,7 +4,6 @@
 //! without any DOM or other intermediate structures. It strives to be zero allocation.
 
 #![doc = include_str!("../README.md")]
-
 #![deny(missing_docs)]
 #![deny(unsafe_code)]
 

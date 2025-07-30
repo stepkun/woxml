@@ -15,7 +15,10 @@ const SAMPLES: usize = 100;
 const ITERATIONS: usize = 100;
 const DURATION: Duration = Duration::from_secs(5);
 
-fn create_xml(writer: &mut XmlWriter<'_, Vec<u8>>, nsmap: &Vec<(Option<&'static str>, &'static str)>) {
+fn create_xml(
+    writer: &mut XmlWriter<'_, Vec<u8>>,
+    nsmap: &Vec<(Option<&'static str>, &'static str)>,
+) {
     _ = writer.begin_elem("OTDS");
     _ = writer.ns_decl(nsmap);
     _ = writer.comment("have a nice day");

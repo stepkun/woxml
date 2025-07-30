@@ -22,12 +22,12 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 - missing namespace methods
 
 ### Changed
+- cleanup old pretty mode
+- reduce code duplicates
 
 ### Fixed
 - pretty output of text content
 - visibility of internal namespace field
-
-### Removed
 
 ## [0.1.0] - 2025-07-23
 

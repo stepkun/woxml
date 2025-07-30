@@ -26,5 +26,7 @@ harness = false
 
 [dependencies]
 
+[build-dependencies]
+
 [dev-dependencies]
 criterion = "0.7.0"
