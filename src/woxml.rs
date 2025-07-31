@@ -1,14 +1,11 @@
 // Copyright © 2025 Stephan Kunz
 // Copyright © before 2025 Piotr Zolnierek
 
-use std::fmt;
-use std::io::{self, Write};
-
-pub type Result = io::Result<()>;
+pub type Result = std::io::Result<()>;
 
 /// The `XmlWriter` himself.
 #[allow(clippy::struct_excessive_bools)]
-pub struct XmlWriter<'a, W: Write> {
+pub struct XmlWriter<'a, W: std::io::Write> {
     /// element stack
     /// `bool` indicates element having children
     stack: Vec<(&'a str, bool)>,
@@ -22,16 +19,16 @@ pub struct XmlWriter<'a, W: Write> {
     /// - put closing elements into own line
     /// - elements without children are self-closing
     pretty: bool,
-    /// if `true` current elem is open
+    /// if `true` current element is open
     opened: bool,
     /// newline indicator
     newline: bool,
-    /// if `true` current elem has only text content
+    /// if `true` current elemement has only text content
     text_content: bool,
 }
 
-impl<W: Write> fmt::Debug for XmlWriter<'_, W> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<W: std::io::Write> std::fmt::Debug for XmlWriter<'_, W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         Ok(write!(
             f,
             "XmlWriter {{ stack: {:?}, opened: {} }}",
@@ -40,7 +37,7 @@ impl<W: Write> fmt::Debug for XmlWriter<'_, W> {
     }
 }
 
-impl<'a, W: Write> XmlWriter<'a, W> {
+impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Create a new writer with `compact` output
     pub fn compact_mode(writer: W) -> Self {
         XmlWriter {
@@ -105,14 +102,13 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     }
 
     fn indent(&mut self) -> Result {
-        let indent = self.stack.len();
         if self.pretty {
             if self.newline {
                 self.write("\n")?;
             } else {
                 self.newline = true;
             }
-            for _ in 0..indent {
+            for _ in 0..self.stack.len() {
                 self.write("  ")?;
             }
         }
@@ -427,7 +423,7 @@ mod tests {
         writer.begin_elem("OTDS");
         writer.ns_decl(nsmap);
         writer.comment("nice to see you");
-        writer.namespace = Some("st");
+        writer.set_namespace("st");
         writer.empty_elem("success");
         writer.begin_elem("node");
         writer.attr_esc("name", "\"123\"");
@@ -435,12 +431,11 @@ mod tests {
         writer.attr("'unescaped'", "\"123\""); // this WILL generate invalid xml
         writer.text("'text'");
         writer.end_elem();
-        writer.namespace = None;
+        writer.unset_namespace();
         writer.begin_elem("stuff");
         writer.cdata("blablab");
-        // xml.end_elem();
-        // xml.end_elem();
-        writer.close();
+        writer.end_elem();
+        writer.end_elem();
         writer.flush();
     }
 

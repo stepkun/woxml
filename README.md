@@ -18,6 +18,10 @@ xml.begin_elem("root");
     xml.begin_elem("stuff");
         xml.cdata("some cdata");
     xml.end_elem();
+    xml.set_namespace("area51");
+        xml.comment("in namespace 'area51'");
+        xml.elem("first");
+    xml.unset_namespace();
 xml.end_elem();
 xml.close(); // This will also close all open elements
 xml.flush();
@@ -29,13 +33,12 @@ println!("{}", str::from_utf8(&actual).unwrap())
 ## License
 
 Licensed under either of
- * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+ * Apache License, Version 2.0 [LICENSE-APACHE](LICENSE-APACHE) or [source](http://www.apache.org/licenses/LICENSE-2.0)
+ * MIT license [LICENSE-MIT](LICENSE-MIT) or [source](http://opensource.org/licenses/MIT)
 
 at your option.
 
 ### Contribution
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in the work by you shall be dual licensed as above, without any
-additional terms or conditions.
+Any contribution intentionally submitted for inclusion in the work by you shall be dual licensed as above,
+without any additional terms or conditions.
