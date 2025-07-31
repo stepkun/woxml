@@ -9,13 +9,31 @@ description = "write only xml"
 license = "MIT/Apache-2.0"
 repository = "https://github.com/stepkun/woxml.git"
 homepage = "http://github.com/stepkun/woxml.git"
-documentation = "https://docs.rs/woxml/latest/woxml/"
+documentation = "https://docs.rs/woxml"
 readme = "README.md"
 exclude = [
     "benches/**",
     "examples/**",
     "tests/**",
 ]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(context, values(any()))',
+] }
+unsafe_code = "warn"
+missing_docs = "warn"
+#unused="allow" # for dev only
+
+[lints.rustdoc]
+private_intra_doc_links = "allow"
+
+[lints.clippy]
+enum_glob_use = "deny"
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+
 
 [lib]
 name = "woxml"

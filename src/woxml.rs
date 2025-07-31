@@ -6,7 +6,8 @@ use std::io::{self, Write};
 
 pub type Result = io::Result<()>;
 
-/// The XmlWriter himself
+/// The `XmlWriter` himself.
+#[allow(clippy::struct_excessive_bools)]
 pub struct XmlWriter<'a, W: Write> {
     /// element stack
     /// `bool` indicates element having children
@@ -20,18 +21,16 @@ pub struct XmlWriter<'a, W: Write> {
     /// - indent all opening elements
     /// - put closing elements into own line
     /// - elements without children are self-closing
-    very_pretty: bool,
+    pretty: bool,
     /// if `true` current elem is open
     opened: bool,
     /// newline indicator
     newline: bool,
-    /// if `true` current elem has children
-    children: bool,
-    /// if `true` current elem has only text_content
+    /// if `true` current elem has only text content
     text_content: bool,
 }
 
-impl<'a, W: Write> fmt::Debug for XmlWriter<'a, W> {
+impl<W: Write> fmt::Debug for XmlWriter<'_, W> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Ok(write!(
             f,
@@ -43,61 +42,62 @@ impl<'a, W: Write> fmt::Debug for XmlWriter<'a, W> {
 
 impl<'a, W: Write> XmlWriter<'a, W> {
     /// Create a new writer with `compact` output
-    pub fn compact_mode(writer: W) -> XmlWriter<'a, W> {
+    pub fn compact_mode(writer: W) -> Self {
         XmlWriter {
             stack: Vec::new(),
             ns_stack: Vec::new(),
             writer: Box::new(writer),
             namespace: None,
-            very_pretty: false,
+            pretty: false,
             opened: false,
             newline: false,
-            children: false,
             text_content: false,
         }
     }
 
     /// Create a new writer with `pretty` output
-    pub fn pretty_mode(writer: W) -> XmlWriter<'a, W> {
+    pub fn pretty_mode(writer: W) -> Self {
         XmlWriter {
             stack: Vec::new(),
             ns_stack: Vec::new(),
             writer: Box::new(writer),
             namespace: None,
-            very_pretty: true,
+            pretty: true,
             opened: false,
             newline: false,
-            children: false,
             text_content: false,
         }
     }
 
     /// Switch to `compact` mode
-    pub fn set_compact_mode(&mut self) {
-        self.very_pretty = false;
+    pub const fn set_compact_mode(&mut self) {
+        self.pretty = false;
     }
 
     /// Switch to `pretty` mode
-    pub fn set_pretty_mode(&mut self) {
-        self.very_pretty = true;
+    pub const fn set_pretty_mode(&mut self) {
+        self.pretty = true;
     }
 
     /// Get the namespace
-    pub fn namespace(&self) -> Option<&'a str> {
+    #[must_use]
+    pub const fn namespace(&self) -> Option<&'a str> {
         self.namespace
     }
 
     /// Set the namespace
-    pub fn set_namespace(&mut self, namespace: &'a str) {
+    pub const fn set_namespace(&mut self, namespace: &'a str) {
         self.namespace = Some(namespace);
     }
 
     /// Remove/Unset the namespace
-    pub fn unset_namespace(&mut self) {
+    pub const fn unset_namespace(&mut self) {
         self.namespace = None;
     }
 
-    /// Write the DTD
+    /// Write the DTD.
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn dtd(&mut self, encoding: &str) -> Result {
         self.write("<?xml version=\"1.0\" encoding=\"")?;
         self.write(encoding)?;
@@ -106,7 +106,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 
     fn indent(&mut self) -> Result {
         let indent = self.stack.len();
-        if self.very_pretty {
+        if self.pretty {
             if self.newline {
                 self.write("\n")?;
             } else {
@@ -129,28 +129,32 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         Ok(())
     }
 
-    /// Writes namespace declarations (xmlns:xx) into the currently open element
+    /// Writes namespace declarations (xmlns:xx) into the currently open element.
+    /// # Errors
+    /// - if writing to buffer fails
+    /// # Panics
+    /// - when opening a namespace without having an element
     pub fn ns_decl(&mut self, ns_map: &Vec<(Option<&'a str>, &'a str)>) -> Result {
-        if !self.opened {
-            panic!(
-                "Attempted to write namespace decl to elem, when no elem was opened, stack {:?}",
-                self.stack
-            );
-        }
+        assert!(
+            self.opened,
+            "Attempted to write namespace decl to elem, when no elem was opened, stack {:?}",
+            self.stack
+        );
 
         for item in ns_map {
-            let name = match item.0 {
-                Some(pre) => "xmlns:".to_string() + pre,
-                None => "xmlns".to_string(),
-            };
+            let name = item
+                .0
+                .map_or_else(|| "xmlns".to_string(), |pre| "xmlns:".to_string() + pre);
             self.attr(&name, item.1)?;
         }
         Ok(())
     }
 
-    /// Write a self-closing element like <br/>
+    /// Write a self-closing element like <br/>.
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn elem(&mut self, name: &str) -> Result {
-        self.close_elem()?;
+        self.close_elem(false)?;
         self.indent()?;
         self.write("<")?;
         let ns = self.namespace;
@@ -160,8 +164,10 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     }
 
     /// Write an element with inlined text content (escaped)
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn elem_text(&mut self, name: &str, text: &str) -> Result {
-        self.close_elem()?;
+        self.close_elem(false)?;
         self.indent()?;
         self.write("<")?;
         let ns = self.namespace;
@@ -177,9 +183,10 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     }
 
     /// Begin an elem, make sure name contains only allowed chars
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn begin_elem(&mut self, name: &'a str) -> Result {
-        self.children = true;
-        self.close_elem()?;
+        self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
             previous.1 = true;
@@ -190,17 +197,18 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         self.ns_stack.push(self.namespace);
         self.write("<")?;
         self.opened = true;
-        self.children = false;
         // stderr().write_fmt(format_args!("\nbegin {}", name));
         let ns = self.namespace;
         self.ns_prefix(ns)?;
         self.write(name)
     }
 
-    /// Close an elem if open, do nothing otherwise
-    fn close_elem(&mut self) -> Result {
+    /// Close an elem if open, do nothing otherwise.
+    /// # Errors
+    /// - if writing to buffer fails
+    fn close_elem(&mut self, has_children: bool) -> Result {
         if self.opened {
-            if self.very_pretty && !self.children {
+            if self.pretty && !has_children {
                 self.write("/>")?;
             } else {
                 self.write(">")?;
@@ -211,14 +219,18 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     }
 
     /// End and elem
+    /// # Errors
+    /// - if writing to buffer fails
+    /// # Panics
+    /// - when trying to close a namespace without having one opened
     pub fn end_elem(&mut self) -> Result {
-        self.close_elem()?;
+        self.close_elem(false)?;
         let ns = self.ns_stack.pop().unwrap_or_else(
             || panic!("Attempted to close namespaced element without corresponding open namespace, stack {:?}", self.ns_stack)
         );
         match self.stack.pop() {
             Some((name, children)) => {
-                if self.very_pretty {
+                if self.pretty {
                     // elem without children have been self-closed
                     if !children {
                         return Ok(());
@@ -242,15 +254,15 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     }
 
     /// Begin an empty elem
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn empty_elem(&mut self, name: &'a str) -> Result {
-        self.children = true;
-        self.close_elem()?;
+        self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
             previous.1 = true;
             self.stack.push(previous);
         }
-        self.children = false;
         self.indent()?;
         self.write("<")?;
         let ns = self.namespace;
@@ -261,13 +273,16 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 
     /// Write an attr, make sure name and value contain only allowed chars.
     /// For an escaping version use `attr_esc`
+    /// # Errors
+    /// - if writing to buffer fails
+    /// # Panics
+    /// - when writing attributes without having an element
     pub fn attr(&mut self, name: &str, value: &str) -> Result {
-        if !self.opened {
-            panic!(
-                "Attempted to write attr to elem, when no elem was opened, stack {:?}",
-                self.stack
-            );
-        }
+        assert!(
+            self.opened,
+            "Attempted to write attr to elem, when no elem was opened, stack {:?}",
+            self.stack
+        );
         self.write(" ")?;
         self.write(name)?;
         self.write("=\"")?;
@@ -275,14 +290,17 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         self.write("\"")
     }
 
-    /// Write an attr, make sure name contains only allowed chars
+    /// Write an attr, make sure name contains only allowed chars.
+    /// # Errors
+    /// - if writing to buffer fails
+    /// # Panics
+    /// - when writing attributes without having an element
     pub fn attr_esc(&mut self, name: &str, value: &str) -> Result {
-        if !self.opened {
-            panic!(
-                "Attempted to write attr to elem, when no elem was opened, stack {:?}",
-                self.stack
-            );
-        }
+        assert!(
+            self.opened,
+            "Attempted to write attr to elem, when no elem was opened, stack {:?}",
+            self.stack
+        );
         self.write(" ")?;
         self.escape(name, true)?;
         self.write("=\"")?;
@@ -290,7 +308,9 @@ impl<'a, W: Write> XmlWriter<'a, W> {
         self.write("\"")
     }
 
-    /// Escape identifiers or text
+    /// Escape identifiers or text.
+    /// # Errors
+    /// - if writing to buffer fails
     fn escape(&mut self, text: &str, ident: bool) -> Result {
         for c in text.chars() {
             match c {
@@ -301,72 +321,78 @@ impl<'a, W: Write> XmlWriter<'a, W> {
                 '>' => self.write("&gt;")?,
                 '\\' if ident => self.write("\\\\")?,
                 _ => self.write_slice(c.encode_utf8(&mut [0; 4]).as_bytes())?,
-            };
+            }
         }
         Ok(())
     }
 
     /// Write a text content, escapes the text automatically
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn text(&mut self, text: &str) -> Result {
-        self.children = true;
-        self.close_elem()?;
+        self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
             previous.1 = true;
             self.stack.push(previous);
         }
-        self.children = false;
         self.text_content = true;
         self.escape(text, false)
     }
 
     /// Raw write, no escaping, no safety net, use at own risk
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn write(&mut self, text: &str) -> Result {
         self.writer.write_all(text.as_bytes())?;
         Ok(())
     }
 
     /// Raw write, no escaping, no safety net, use at own risk
+    /// # Errors
+    /// - if writing to buffer fails
     fn write_slice(&mut self, slice: &[u8]) -> Result {
         self.writer.write_all(slice)?;
         Ok(())
     }
 
-    /// Write a CDATA
+    /// Write a CDATA.
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn cdata(&mut self, cdata: &str) -> Result {
-        self.children = true;
-        self.close_elem()?;
+        self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
             previous.1 = true;
             self.stack.push(previous);
         }
-        if self.very_pretty {
+        if self.pretty {
             self.indent()?;
         }
-        self.children = false;
         self.write("<![CDATA[")?;
         self.write(cdata)?;
         self.write("]]>")
     }
 
     /// Write a comment
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn comment(&mut self, comment: &str) -> Result {
-        self.children = true;
-        self.close_elem()?;
+        self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
             previous.1 = true;
             self.stack.push(previous);
         }
         self.indent()?;
-        self.children = false;
         self.write("<!-- ")?;
         self.escape(comment, false)?;
         self.write(" -->")
     }
 
     /// Close all open elems
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn close(&mut self) -> Result {
         for _ in 0..self.stack.len() {
             self.end_elem()?;
@@ -375,11 +401,14 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     }
 
     /// Flush the underlying Writer
+    /// # Errors
+    /// - if writing to buffer fails
     pub fn flush(&mut self) -> Result {
         self.writer.flush()
     }
 
-    /// Consume the XmlWriter and return the inner Writer
+    /// Consume the `XmlWriter` and return the inner Writer
+    #[must_use]
     pub fn into_inner(self) -> W {
         *self.writer
     }
@@ -426,9 +455,9 @@ mod tests {
         create_xml(&mut writer, &nsmap);
 
         let actual = writer.into_inner();
-        println!("{}", str::from_utf8(&actual).unwrap());
+        println!("{}", str::from_utf8(&actual).expect("should not happen"));
         assert_eq!(
-            str::from_utf8(&actual).unwrap(),
+            str::from_utf8(&actual).expect("should not happen"),
             "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>"
         );
     }
@@ -444,9 +473,9 @@ mod tests {
         create_xml(&mut writer, &nsmap);
 
         let actual = writer.into_inner();
-        println!("{}", str::from_utf8(&actual).unwrap());
+        println!("{}", str::from_utf8(&actual).expect("should not happen"));
         assert_eq!(
-            str::from_utf8(&actual).unwrap(),
+            str::from_utf8(&actual).expect("should not happen"),
             "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- nice to see you -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>"
         );
     }
@@ -457,12 +486,18 @@ mod tests {
         xml.comment("comment");
 
         let actual = xml.into_inner();
-        assert_eq!(str::from_utf8(&actual).unwrap(), "<!-- comment -->");
+        assert_eq!(
+            str::from_utf8(&actual).expect("should not happen"),
+            "<!-- comment -->"
+        );
 
         let mut xml = XmlWriter::compact_mode(Vec::new());
         xml.comment("comment");
 
         let actual = xml.into_inner();
-        assert_eq!(str::from_utf8(&actual).unwrap(), "<!-- comment -->");
+        assert_eq!(
+            str::from_utf8(&actual).expect("should not happen"),
+            "<!-- comment -->"
+        );
     }
 }
