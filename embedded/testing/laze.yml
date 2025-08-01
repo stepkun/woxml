@@ -1,0 +1,5 @@
+apps:
+  - name: woxml-testing
+    selects:
+      - ?defmt
+      - embedded-test-only

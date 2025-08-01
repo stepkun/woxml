@@ -13,6 +13,7 @@ documentation = "https://docs.rs/woxml"
 readme = "README.md"
 exclude = [
     "benches/**",
+    "embedded/**",
     "examples/**",
     "tests/**",
 ]

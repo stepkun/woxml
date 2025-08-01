@@ -1,0 +1,25 @@
+[package]
+name = "woxml-testing"
+resolver = "3"
+edition = "2024"
+license = "MIT/Apache-2.0"
+publish = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(context, values(any()))',
+] }
+
+[dependencies]
+ariel-os = { path = "../../build/imports/ariel-os/src/ariel-os", features = [] }
+ariel-os-boards = { path = "../../build/imports/ariel-os/src/ariel-os-boards" }
+
+[dev-dependencies]
+embedded-test = { version = "0.6.1", default-features = false, features = [
+  "ariel-os",
+  "semihosting",
+] }
+
+[[test]]
+name = "test"
+harness = false

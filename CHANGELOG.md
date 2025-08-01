@@ -20,6 +20,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Added
 - more documentation
+- embedded environment with ariel-os
 
 ### Changed
 - performance improvement

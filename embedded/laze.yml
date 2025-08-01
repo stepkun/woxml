@@ -1,0 +1,8 @@
+defaults:
+  apps:
+    context:
+      - ariel-os
+
+subdirs:
+  - usage
+  - testing
