@@ -4,7 +4,6 @@
 pub type Result = std::io::Result<()>;
 
 /// The `XmlWriter` himself.
-#[allow(clippy::struct_excessive_bools)]
 pub struct XmlWriter<'a, W: std::io::Write> {
     /// element stack
     /// `bool` indicates element having children
@@ -15,16 +14,14 @@ pub struct XmlWriter<'a, W: std::io::Write> {
     /// An XML namespace that all elements will be part of, unless `None`
     namespace: Option<&'a str>,
     /// If `true` it will
-    /// - indent all opening elements
+    /// - indent all opening elements on a new line
     /// - put closing elements into own line
-    /// - elements without children are self-closing
+    /// - elements without children are automatically self-closing
     pretty: bool,
     /// if `true` current element is open
     opened: bool,
-    /// newline indicator
+    /// newline/indentation indicator
     newline: bool,
-    /// if `true` current elemement has only text content
-    text_content: bool,
 }
 
 impl<W: std::io::Write> std::fmt::Debug for XmlWriter<'_, W> {
@@ -48,7 +45,6 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
             pretty: false,
             opened: false,
             newline: false,
-            text_content: false,
         }
     }
 
@@ -62,7 +58,6 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
             pretty: true,
             opened: false,
             newline: false,
-            text_content: false,
         }
     }
 
@@ -231,10 +226,10 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
                     if !children {
                         return Ok(());
                     }
-                    if !self.text_content {
+                    if self.newline {
                         self.indent()?;
                     }
-                    self.text_content = false;
+                    self.newline = true;
                 }
                 self.write("</")?;
                 self.ns_prefix(ns)?;
@@ -332,7 +327,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
             previous.1 = true;
             self.stack.push(previous);
         }
-        self.text_content = true;
+        self.newline = false;
         self.escape(text, false)
     }
 
