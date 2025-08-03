@@ -2,5 +2,4 @@ apps:
   - name: woxml-testing
     selects:
       - alloc
-      - ?defmt
       - embedded-test-only

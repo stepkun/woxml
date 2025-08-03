@@ -32,7 +32,7 @@ async fn main() {
         let _ = xml.flush();
         let actual = xml.into_inner();
 
-        info!("{}", str::from_utf8(&actual).unwrap());
+        info!("{}\n", str::from_utf8(&actual).unwrap());
 
         exit(ExitCode::SUCCESS);
 }
