@@ -1,12 +1,34 @@
 # Copyright © Stephan Kunz
-[package]
+[workspace]
 resolver = "3"
 edition = "2024"
+license = "MIT/Apache-2.0"
+authors = ["stepkun <stephan.kunz@kabelbw.de>"]
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(context, values(any()))',
+] }
+unsafe_code = "warn"
+missing_docs = "warn"
+#unused="allow" # for dev only
+
+[workspace.lints.rustdoc]
+private_intra_doc_links = "allow"
+
+[workspace.lints.clippy]
+enum_glob_use = "deny"
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+
+[package]
 name = "woxml"
 version = "0.1.1"
+edition = "2024"
+license = "MIT/Apache-2.0"
 authors = ["stepkun <stephan.kunz@kabelbw.de>"]
 description = "write only xml"
-license = "MIT/Apache-2.0"
 repository = "https://github.com/stepkun/woxml.git"
 homepage = "http://github.com/stepkun/woxml.git"
 documentation = "https://docs.rs/woxml"
@@ -18,25 +40,11 @@ exclude = [
     "tests/**",
 ]
 
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = [
-  'cfg(context, values(any()))',
-] }
-unsafe_code = "warn"
-missing_docs = "warn"
-#unused="allow" # for dev only
-
-[lints.rustdoc]
-private_intra_doc_links = "allow"
-
-[lints.clippy]
-enum_glob_use = "deny"
-pedantic = { level = "deny", priority = -1 }
-nursery = { level = "deny", priority = -1 }
-unwrap_used = "deny"
-
 [lib]
 name = "woxml"
+
+[lints]
+workspace = true
 
 [[bench]]
 name = "woxml"
