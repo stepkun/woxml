@@ -1,28 +1,6 @@
 # Copyright © Stephan Kunz
-[workspace]
-resolver = "3"
-edition = "2024"
-license = "MIT/Apache-2.0"
-authors = ["stepkun <stephan.kunz@kabelbw.de>"]
-
-[workspace.lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = [
-  'cfg(context, values(any()))',
-] }
-unsafe_code = "warn"
-missing_docs = "warn"
-#unused="allow" # for dev only
-
-[workspace.lints.rustdoc]
-private_intra_doc_links = "allow"
-
-[workspace.lints.clippy]
-enum_glob_use = "deny"
-pedantic = { level = "deny", priority = -1 }
-nursery = { level = "deny", priority = -1 }
-unwrap_used = "deny"
-
 [package]
+resolver = "3"
 name = "woxml"
 version = "0.1.1"
 edition = "2024"
@@ -43,16 +21,36 @@ exclude = [
 [lib]
 name = "woxml"
 
-[lints]
-workspace = true
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(context, values(any()))',
+] }
+unsafe_code = "warn"
+missing_docs = "warn"
+#unused="allow" # for dev only
+
+[lints.rustdoc]
+private_intra_doc_links = "allow"
+
+[lints.clippy]
+enum_glob_use = "deny"
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+unwrap_used = "deny"
+
 
 [[bench]]
 name = "woxml"
 harness = false
 
 [dependencies]
+thiserror = { version = "2", default-features = false }
 
 [build-dependencies]
 
 [dev-dependencies]
 criterion = "0.7.0"
+
+[features]
+#default = ["std"]
+std = ["thiserror/std"]

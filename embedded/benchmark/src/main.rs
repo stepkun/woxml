@@ -1,6 +1,8 @@
 #![no_main]
 #![no_std]
 
+//! Benchmark for `woxml::XmlWriter`
+
 use ariel_os::debug::log::*;
 
 #[ariel_os::thread(autostart)]

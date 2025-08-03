@@ -1,6 +1,8 @@
 #![no_main]
 #![no_std]
 
+//! Testing for `woxml::XmlWriter`
+
 #[cfg(test)]
 #[embedded_test::tests]
 mod tests {

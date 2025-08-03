@@ -1,16 +1,105 @@
 // Copyright © 2025 Stephan Kunz
 // Copyright © of xml_writer::XmlWriter Piotr Zolnierek
 
-pub type Result = std::io::Result<()>;
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
+
+use alloc::{boxed::Box, string::ToString, vec::Vec};
+use core::fmt::{Debug, Formatter};
+
+use thiserror::Error;
+
+pub type Result<T> = core::result::Result<T, Error>;
+
+/// Error type
+#[derive(Error, Debug)]
+pub enum Error {
+    #[cfg(feature = "std")]
+    /// Pass through stdio error
+    #[error("{0}")]
+    Stdio(#[from] std::io::Error),
+    #[cfg(not(feature = "std"))]
+    /// failed to write whole buffer
+    #[error("failed to write whole buffer")]
+    WriteAllEof,
+}
+
+/// The trait for objects which are byte-oriented sinks.
+#[cfg(feature = "std")]
+pub trait Write: std::io::Write {}
+
+/// The trait for objects which are byte-oriented sinks.
+#[cfg(not(feature = "std"))]
+pub trait Write {
+    /// Flushes this output stream, ensuring that all intermediately buffered contents reach their destination.
+    /// # Errors
+    /// It is considered an error if not all bytes could be written due to I/O errors or EOF being reached.
+    fn flush(&mut self) -> Result<()>;
+
+    /// Writes a buffer into this writer, returning how many bytes were written.
+    ///
+    /// # Errors
+    /// Each call to write may generate an I/O error indicating that the operation could not be completed. If an error is returned then no bytes in the buffer were written to this writer.
+    /// It is not considered an error if the entire buffer could not be written to this writer.
+    fn write(&mut self, buf: &[u8]) -> Result<usize>;
+
+    /// Attempts to write an entire buffer into this writer.
+    ///
+    /// This method will continuously call write until there is no more data to be written.
+    /// This method will not return until the entire buffer has been successfully written or an error occurs.
+    /// # Errors
+    /// This function will return the first error that write returns.
+    fn write_all(&mut self, mut buf: &[u8]) -> Result<()> {
+        while !buf.is_empty() {
+            match self.write(buf) {
+                Ok(0) => {
+                    return Err(Error::WriteAllEof);
+                }
+                Ok(n) => buf = &buf[n..],
+                //Err(ref e) => e.is_interrupted() => {}
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Implement the trait for all types that implement [`std::io::Write`]
+#[cfg(feature = "std")]
+impl<T> Write for T where T: std::io::Write {}
+
+#[cfg(not(feature = "std"))]
+impl Write for Vec<u8> {
+    #[inline]
+    fn flush(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        self.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn write_all(&mut self, data: &[u8]) -> Result<()> {
+        if self.write(data)? < data.len() {
+            Err(Error::WriteAllEof)
+        } else {
+            Ok(())
+        }
+    }
+}
 
 /// The `XmlWriter` himself.
-pub struct XmlWriter<'a, W: std::io::Write> {
+pub struct XmlWriter<'a, Buf: Write> {
     /// element stack
     /// `bool` indicates element having children
     stack: Vec<(&'a str, bool)>,
     /// namespace stack
     ns_stack: Vec<Option<&'a str>>,
-    writer: Box<W>,
+    writer: Box<Buf>,
     /// An XML namespace that all elements will be part of, unless `None`
     namespace: Option<&'a str>,
     /// If `true` it will
@@ -24,8 +113,8 @@ pub struct XmlWriter<'a, W: std::io::Write> {
     newline: bool,
 }
 
-impl<W: std::io::Write> std::fmt::Debug for XmlWriter<'_, W> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl<Buf: Write> Debug for XmlWriter<'_, Buf> {
+    fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
         Ok(write!(
             f,
             "XmlWriter {{ stack: {:?}, opened: {} }}",
@@ -34,7 +123,7 @@ impl<W: std::io::Write> std::fmt::Debug for XmlWriter<'_, W> {
     }
 }
 
-impl<'a, W: std::io::Write> XmlWriter<'a, W> {
+impl<'a, W: Write> XmlWriter<'a, W> {
     /// Create a new writer with `compact` output
     pub fn compact_mode(writer: W) -> Self {
         XmlWriter {
@@ -90,13 +179,13 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Write the DTD.
     /// # Errors
     /// - if writing to buffer fails
-    pub fn dtd(&mut self, encoding: &str) -> Result {
+    pub fn dtd(&mut self, encoding: &str) -> Result<()> {
         self.write("<?xml version=\"1.0\" encoding=\"")?;
         self.write(encoding)?;
         self.write("\" ?>\n")
     }
 
-    fn indent(&mut self) -> Result {
+    fn indent(&mut self) -> Result<()> {
         if self.pretty {
             if self.newline {
                 self.write("\n")?;
@@ -112,7 +201,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
 
     /// Write a namespace prefix for the current element,
     /// if there is one set
-    fn ns_prefix(&mut self, namespace: Option<&'a str>) -> Result {
+    fn ns_prefix(&mut self, namespace: Option<&'a str>) -> Result<()> {
         if let Some(ns) = namespace {
             self.write(ns)?;
             self.write(":")?;
@@ -125,7 +214,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// - if writing to buffer fails
     /// # Panics
     /// - when opening a namespace without having an element
-    pub fn ns_decl(&mut self, ns_map: &Vec<(Option<&'a str>, &'a str)>) -> Result {
+    pub fn ns_decl(&mut self, ns_map: &Vec<(Option<&'a str>, &'a str)>) -> Result<()> {
         assert!(
             self.opened,
             "Attempted to write namespace decl to elem, when no elem was opened, stack {:?}",
@@ -144,7 +233,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Write a self-closing element like <br/>.
     /// # Errors
     /// - if writing to buffer fails
-    pub fn elem(&mut self, name: &str) -> Result {
+    pub fn elem(&mut self, name: &str) -> Result<()> {
         self.close_elem(false)?;
         self.indent()?;
         self.write("<")?;
@@ -157,7 +246,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Write an element with inlined text content (escaped)
     /// # Errors
     /// - if writing to buffer fails
-    pub fn elem_text(&mut self, name: &str, text: &str) -> Result {
+    pub fn elem_text(&mut self, name: &str, text: &str) -> Result<()> {
         self.close_elem(false)?;
         self.indent()?;
         self.write("<")?;
@@ -176,7 +265,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Begin an elem, make sure name contains only allowed chars
     /// # Errors
     /// - if writing to buffer fails
-    pub fn begin_elem(&mut self, name: &'a str) -> Result {
+    pub fn begin_elem(&mut self, name: &'a str) -> Result<()> {
         self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
@@ -197,7 +286,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Close an elem if open, do nothing otherwise.
     /// # Errors
     /// - if writing to buffer fails
-    fn close_elem(&mut self, has_children: bool) -> Result {
+    fn close_elem(&mut self, has_children: bool) -> Result<()> {
         if self.opened {
             if self.pretty && !has_children {
                 self.write("/>")?;
@@ -214,7 +303,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// - if writing to buffer fails
     /// # Panics
     /// - when trying to close a namespace without having one opened
-    pub fn end_elem(&mut self) -> Result {
+    pub fn end_elem(&mut self) -> Result<()> {
         self.close_elem(false)?;
         let ns = self.ns_stack.pop().unwrap_or_else(
             || panic!("Attempted to close namespaced element without corresponding open namespace, stack {:?}", self.ns_stack)
@@ -247,7 +336,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Begin an empty elem
     /// # Errors
     /// - if writing to buffer fails
-    pub fn empty_elem(&mut self, name: &'a str) -> Result {
+    pub fn empty_elem(&mut self, name: &'a str) -> Result<()> {
         self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
@@ -268,7 +357,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// - if writing to buffer fails
     /// # Panics
     /// - when writing attributes without having an element
-    pub fn attr(&mut self, name: &str, value: &str) -> Result {
+    pub fn attr(&mut self, name: &str, value: &str) -> Result<()> {
         assert!(
             self.opened,
             "Attempted to write attr to elem, when no elem was opened, stack {:?}",
@@ -286,7 +375,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// - if writing to buffer fails
     /// # Panics
     /// - when writing attributes without having an element
-    pub fn attr_esc(&mut self, name: &str, value: &str) -> Result {
+    pub fn attr_esc(&mut self, name: &str, value: &str) -> Result<()> {
         assert!(
             self.opened,
             "Attempted to write attr to elem, when no elem was opened, stack {:?}",
@@ -302,7 +391,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Escape identifiers or text.
     /// # Errors
     /// - if writing to buffer fails
-    fn escape(&mut self, text: &str, ident: bool) -> Result {
+    fn escape(&mut self, text: &str, ident: bool) -> Result<()> {
         for c in text.chars() {
             match c {
                 '"' => self.write("&quot;")?,
@@ -320,7 +409,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Write a text content, escapes the text automatically
     /// # Errors
     /// - if writing to buffer fails
-    pub fn text(&mut self, text: &str) -> Result {
+    pub fn text(&mut self, text: &str) -> Result<()> {
         self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
@@ -334,7 +423,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Raw write, no escaping, no safety net, use at own risk
     /// # Errors
     /// - if writing to buffer fails
-    pub fn write(&mut self, text: &str) -> Result {
+    pub fn write(&mut self, text: &str) -> Result<()> {
         self.writer.write_all(text.as_bytes())?;
         Ok(())
     }
@@ -342,7 +431,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Raw write, no escaping, no safety net, use at own risk
     /// # Errors
     /// - if writing to buffer fails
-    fn write_slice(&mut self, slice: &[u8]) -> Result {
+    fn write_slice(&mut self, slice: &[u8]) -> Result<()> {
         self.writer.write_all(slice)?;
         Ok(())
     }
@@ -350,7 +439,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Write a CDATA.
     /// # Errors
     /// - if writing to buffer fails
-    pub fn cdata(&mut self, cdata: &str) -> Result {
+    pub fn cdata(&mut self, cdata: &str) -> Result<()> {
         self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
@@ -368,7 +457,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Write a comment
     /// # Errors
     /// - if writing to buffer fails
-    pub fn comment(&mut self, comment: &str) -> Result {
+    pub fn comment(&mut self, comment: &str) -> Result<()> {
         self.close_elem(true)?;
         // change previous elem to having children
         if let Some(mut previous) = self.stack.pop() {
@@ -384,7 +473,7 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Close all open elems
     /// # Errors
     /// - if writing to buffer fails
-    pub fn close(&mut self) -> Result {
+    pub fn close(&mut self) -> Result<()> {
         for _ in 0..self.stack.len() {
             self.end_elem()?;
         }
@@ -394,8 +483,9 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
     /// Flush the underlying Writer
     /// # Errors
     /// - if writing to buffer fails
-    pub fn flush(&mut self) -> Result {
-        self.writer.flush()
+    pub fn flush(&mut self) -> Result<()> {
+        self.writer.flush()?;
+        Ok(())
     }
 
     /// Consume the `XmlWriter` and return the inner Writer
@@ -408,8 +498,9 @@ impl<'a, W: std::io::Write> XmlWriter<'a, W> {
 #[allow(unused_must_use)]
 #[cfg(test)]
 mod tests {
+    extern crate std;
     use super::XmlWriter;
-    use std::str;
+    use std::{println, str, vec, vec::Vec};
 
     fn create_xml(
         writer: &mut XmlWriter<'_, Vec<u8>>,
