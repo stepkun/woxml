@@ -1,0 +1,5 @@
+apps:
+  - name: woxml-benchmark
+    selects:
+      - sw/threading
+      - sw/benchmark

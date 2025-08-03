@@ -1,7 +1,10 @@
 // Copyright © 2025 Stephan Kunz
+// Copyright © of crate 'xml_writer' Piotr Zolnierek
+//#![no_std]
 
-//! The `XmlWriter` writes xml in an efficient way, by writing directly to the provided stream,
-//! without any DOM or other intermediate structures. It strives to be zero allocation.
+//! `XmlWriter` writes xml in an efficient way without any DOM or other intermediate structures.
+//! 
+//! The implementation is based on the crate xml_writer by Piotr Zolnierek.
 
 #![doc = include_str!("../README.md")]
 

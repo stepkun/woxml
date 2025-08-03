@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-// Copyright © before 2025 Piotr Zolnierek
+// Copyright © of xml_writer::XmlWriter Piotr Zolnierek
 
 pub type Result = std::io::Result<()>;
 
