@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 
-//! Testing for `woxml::XmlWriter`
+//! Testing for `woxml::XmlWriter` in embedded environment
 
 extern crate alloc;
 
@@ -96,5 +96,41 @@ mod tests {
             str::from_utf8(&actual).unwrap(),
             "<!-- comment -->"
         );
+    }
+
+    #[test]
+    async fn buffer() -> Result<(), woxml::Error> {
+        let nsmap = vec![
+            (None, "http://localhost/"),
+            (Some("st"), "http://127.0.0.1/"),
+        ];
+        let mut writer = XmlWriter::compact_mode(bytes::BytesMut::new());
+
+        writer.begin_elem("OTDS")?;
+        writer.ns_decl(&nsmap)?;
+        writer.comment("nice to see you")?;
+        writer.set_namespace("st");
+        writer.empty_elem("success")?;
+        writer.begin_elem("node")?;
+        writer.attr_esc("name", "\"123\"")?;
+        writer.attr("id", "abc")?;
+        writer.attr("'unescaped'", "\"123\"")?;
+        writer.text("'text'")?;
+        writer.end_elem()?;
+        writer.unset_namespace();
+        writer.begin_elem("stuff")?;
+        writer.cdata("blablab")?;
+        writer.end_elem()?;
+        writer.end_elem()?;
+        writer.close()?;
+        writer.flush()?;
+
+        let actual = writer.into_inner();
+        info!("{}", str::from_utf8(&actual).expect("should not happen"));
+        assert_eq!(
+            str::from_utf8(&actual).expect("should not happen"),
+            "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>"
+        );
+        Ok(())
     }
 }

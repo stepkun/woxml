@@ -1,6 +1,6 @@
 // Copyright © 2025 Stephan Kunz
 
-//! Testing of woxml
+//! Testing of woxml library
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -20,7 +20,7 @@ fn create_xml(
     writer.begin_elem("node")?;
     writer.attr_esc("name", "\"123\"")?;
     writer.attr("id", "abc")?;
-    writer.attr("'unescaped'", "\"123\"")?; // this WILL generate invalid xml
+    writer.attr("'unescaped'", "\"123\"")?;
     writer.text("'text'")?;
     writer.end_elem()?;
     writer.unset_namespace();
@@ -28,7 +28,7 @@ fn create_xml(
     writer.cdata("blablab")?;
     writer.end_elem()?;
     writer.end_elem()?;
-    writer.close()?; // will also end any left open element
+    writer.close()?;
     writer.flush()
 }
 
@@ -108,7 +108,7 @@ fn buffer() -> Result<(), woxml::Error> {
     writer.begin_elem("node")?;
     writer.attr_esc("name", "\"123\"")?;
     writer.attr("id", "abc")?;
-    writer.attr("'unescaped'", "\"123\"")?; // this WILL generate invalid xml
+    writer.attr("'unescaped'", "\"123\"")?;
     writer.text("'text'")?;
     writer.end_elem()?;
     writer.unset_namespace();
@@ -116,7 +116,7 @@ fn buffer() -> Result<(), woxml::Error> {
     writer.cdata("blablab")?;
     writer.end_elem()?;
     writer.end_elem()?;
-    writer.close()?; // will also end any left open element
+    writer.close()?;
     writer.flush()?;
 
     let actual = writer.into_inner();
