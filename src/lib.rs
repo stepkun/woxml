@@ -5,4 +5,4 @@
 
 mod woxml;
 
-pub use woxml::{Error, XmlWriter};
+pub use woxml::{Error, Write, XmlWriter};

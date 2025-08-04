@@ -16,7 +16,7 @@ const ITERATIONS: usize = 100;
 const DURATION: Duration = Duration::from_secs(5);
 
 fn create_xml(
-    writer: &mut XmlWriter<'_, Vec<u8>>,
+    writer: &mut XmlWriter<'_, impl woxml::Write>,
     nsmap: &Vec<(Option<&'static str>, &'static str)>,
 ) {
     _ = writer.begin_elem("OTDS");
@@ -68,6 +68,17 @@ fn woxml(c: &mut Criterion) {
             std::hint::black_box(());
         });
     });
+
+    let mut writer: XmlWriter<'_, Vec<u8>> = XmlWriter::compact_mode(Vec::new());
+    group.bench_function("bytes", |b| {
+        b.iter(|| {
+            for _ in 1..=ITERATIONS {
+                create_xml(&mut writer, &nsmap);
+            }
+            std::hint::black_box(());
+        });
+    });
+
 }
 
 criterion_group!(benches, woxml);

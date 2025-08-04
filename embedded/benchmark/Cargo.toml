@@ -26,4 +26,5 @@ unwrap_used = "deny"
 [dependencies]
 ariel-os = { path = "../../build/imports/ariel-os/src/ariel-os", features = ["bench"] }
 ariel-os-boards = { path = "../../build/imports/ariel-os/src/ariel-os-boards" }
+bytes = { version = "1", default-features = false }
 woxml = { path = "../..", default-features = false }

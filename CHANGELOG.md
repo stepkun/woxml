@@ -25,7 +25,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 - externalized tests to better catch breaking changes
 
 ### Fixed
-- make Error type public
+- make Error type & Write trait public
 
 ### Removed
 - usage of 'std::io::Write' types as writer targets
