@@ -6,6 +6,11 @@ but can also be used in 'no_std' environments (use 'default-features = false').<
 
 It is not an exact drop-in-replacement for xml_writer's XmlWriter as the access to interiors is prohibitet, 
 you have to use different constructors and accessors respectively.
+It also is not yet possible to use it for all 'std::io::Write' implementors, missing ones can be added in future versions.
+
+It works for:
+- Vec<u8>
+- bytes::BytesMut
 
 ## Usage
 
@@ -13,7 +18,7 @@ you have to use different constructors and accessors respectively.
 extern crate woxml;
 use woxml::XmlWriter;
 
-let mut xml = XmlWriter::pretty_mode(Vec::new()); // supply a Writer, preferably a BufferedWriter
+let mut xml = XmlWriter::pretty_mode(Vec::new()); // supply a woxml::Write implementor
 xml.begin_elem("root");
     xml.comment("have a nice day");
     xml.begin_elem("first");

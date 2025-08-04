@@ -2,8 +2,6 @@
 // Copyright © of xml_writer::XmlWriter Piotr Zolnierek
 
 extern crate alloc;
-#[cfg(feature = "std")]
-extern crate std;
 
 use alloc::{boxed::Box, string::ToString, vec::Vec};
 use core::fmt::{Debug, Formatter};
@@ -15,22 +13,18 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// Error type
 #[derive(Error, Debug)]
 pub enum Error {
-    #[cfg(feature = "std")]
-    /// Pass through stdio error
+    /// Pass through `core::str::Utf8Error`
     #[error("{0}")]
-    Stdio(#[from] std::io::Error),
-    #[cfg(not(feature = "std"))]
+    Utf8(#[from] core::str::Utf8Error),
+    /// Pass through `core::fmt::Error`
+    #[error("{0}")]
+    Core(#[from] core::fmt::Error),
     /// failed to write whole buffer
     #[error("failed to write whole buffer")]
     WriteAllEof,
 }
 
 /// The trait for objects which are byte-oriented sinks.
-#[cfg(feature = "std")]
-pub trait Write: std::io::Write {}
-
-/// The trait for objects which are byte-oriented sinks.
-#[cfg(not(feature = "std"))]
 pub trait Write {
     /// Flushes this output stream, ensuring that all intermediately buffered contents reach their destination.
     /// # Errors
@@ -65,11 +59,7 @@ pub trait Write {
     }
 }
 
-/// Implement the trait for all types that implement [`std::io::Write`]
-#[cfg(feature = "std")]
-impl<T> Write for T where T: std::io::Write {}
-
-#[cfg(not(feature = "std"))]
+// #[cfg(not(feature = "std"))]
 impl Write for Vec<u8> {
     #[inline]
     fn flush(&mut self) -> Result<()> {
@@ -91,6 +81,68 @@ impl Write for Vec<u8> {
         }
     }
 }
+
+// #[cfg(not(feature = "std"))]
+impl Write for bytes::BytesMut {
+    #[inline]
+    fn flush(&mut self) -> Result<()> {
+        Ok(())
+    }
+
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        self.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    #[inline]
+    fn write_all(&mut self, data: &[u8]) -> Result<()> {
+        if self.write(data)? < data.len() {
+            Err(Error::WriteAllEof)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+// /// Implement the trait for all types that implement [`core::fmt::Write`]
+// #[cfg(not(feature = "std"))]
+// impl<T> Write for T
+// where
+//     T: core::fmt::Write,
+// {
+//     #[inline]
+//     fn flush(&mut self) -> Result<()> {
+//         Ok(())
+//     }
+
+//     #[inline]
+//     fn write(&mut self, buf: &[u8]) -> Result<usize> {
+//         let str = str::from_utf8(buf)?;
+//         let len = str.len();
+//         T::write_str(self, str)?;
+//         Ok(len)
+//     }
+// }
+
+// /// Implement the trait for all types that implement [`std::io::Write`]
+// #[cfg(feature = "std")]
+// impl<T> Write for T
+// where
+//     T: std::io::Write,
+// {
+//     #[inline]
+//     fn flush(&mut self) -> Result<()> {
+//         T::flush(self)?;
+//         Ok(())
+//     }
+
+//     #[inline]
+//     fn write(&mut self, buf: &[u8]) -> Result<usize> {
+//         let len = T::write(self, buf)?;
+//         Ok(len)
+//     }
+// }
 
 /// The `XmlWriter` himself.
 pub struct XmlWriter<'a, Buf: Write> {
@@ -492,93 +544,5 @@ impl<'a, W: Write> XmlWriter<'a, W> {
     #[must_use]
     pub fn into_inner(self) -> W {
         *self.writer
-    }
-}
-
-#[allow(unused_must_use)]
-#[cfg(test)]
-mod tests {
-    extern crate std;
-    use super::XmlWriter;
-    use std::{println, str, vec, vec::Vec};
-
-    fn create_xml(
-        writer: &mut XmlWriter<'_, Vec<u8>>,
-        nsmap: &Vec<(Option<&'static str>, &'static str)>,
-    ) {
-        writer.begin_elem("OTDS");
-        writer.ns_decl(nsmap);
-        writer.comment("nice to see you");
-        writer.set_namespace("st");
-        writer.empty_elem("success");
-        writer.begin_elem("node");
-        writer.attr_esc("name", "\"123\"");
-        writer.attr("id", "abc");
-        writer.attr("'unescaped'", "\"123\""); // this WILL generate invalid xml
-        writer.text("'text'");
-        writer.end_elem();
-        writer.unset_namespace();
-        writer.begin_elem("stuff");
-        writer.cdata("blablab");
-        writer.end_elem();
-        writer.end_elem();
-        writer.flush();
-    }
-
-    #[test]
-    fn compact() {
-        let nsmap = vec![
-            (None, "http://localhost/"),
-            (Some("st"), "http://127.0.0.1/"),
-        ];
-        let mut writer = XmlWriter::compact_mode(Vec::new());
-
-        create_xml(&mut writer, &nsmap);
-
-        let actual = writer.into_inner();
-        println!("{}", str::from_utf8(&actual).expect("should not happen"));
-        assert_eq!(
-            str::from_utf8(&actual).expect("should not happen"),
-            "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>"
-        );
-    }
-
-    #[test]
-    fn pretty() {
-        let nsmap = vec![
-            (None, "http://localhost/"),
-            (Some("st"), "http://127.0.0.1/"),
-        ];
-        let mut writer = XmlWriter::pretty_mode(Vec::new());
-
-        create_xml(&mut writer, &nsmap);
-
-        let actual = writer.into_inner();
-        println!("{}", str::from_utf8(&actual).expect("should not happen"));
-        assert_eq!(
-            str::from_utf8(&actual).expect("should not happen"),
-            "<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- nice to see you -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>"
-        );
-    }
-
-    #[test]
-    fn comment() {
-        let mut xml = XmlWriter::pretty_mode(Vec::new());
-        xml.comment("comment");
-
-        let actual = xml.into_inner();
-        assert_eq!(
-            str::from_utf8(&actual).expect("should not happen"),
-            "<!-- comment -->"
-        );
-
-        let mut xml = XmlWriter::compact_mode(Vec::new());
-        xml.comment("comment");
-
-        let actual = xml.into_inner();
-        assert_eq!(
-            str::from_utf8(&actual).expect("should not happen"),
-            "<!-- comment -->"
-        );
     }
 }

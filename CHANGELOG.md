@@ -16,10 +16,24 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
+## [0.3.0] - 2025-??-??
+
+### Added
+- 'bytes::BytesMut' as writer target
+
+### Changed
+- externalized tests to better catch breaking changes
+
+### Fixed
+- make Error type public
+
+### Removed
+- usage of 'std::io::Write' types as writer targets
+
 ## [0.2.0] - 2025-08-04
 
 ### Fixed
-- changing the return type is a breaking change
+- changing the error type in 'Result<...>' is a breaking change
 
 ## [0.1.2] - 2025-08-04
 
