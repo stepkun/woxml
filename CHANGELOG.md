@@ -16,19 +16,20 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.1.2] - 2025-??-??
+## [0.1.2] - 2025-08-04
 
 ### Added
 - more documentation
 - embedded environment with ariel-os
+- feature "std" by default
 
 ### Changed
+- crate is now 'no_std'
 - performance improvement
+- now has its own trait 'Write'
 
 ### Fixed
 - clippy complaints
-
-### Removed
 
 ## [0.1.1] - 2025-07-30
 

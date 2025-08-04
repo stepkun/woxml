@@ -1,5 +1,11 @@
 # woxml::XmlWriter
-Small and fast XML-Writer
+The `XmlWriter` is designed to write xml in an efficient way without any DOM or other intermediate structures.<br/>
+
+The implementation is based on the crate [xml_writer](https://github.com/pzol/xml_writer) by Piotr Zolnierek,
+but can also be used in 'no_std' environments (use 'default-features = false').<br/>
+
+It is not an exact drop-in-replacement for xml_writer's XmlWriter as the access to interiors is prohibitet, 
+you have to use different constructors and accessors respectively.
 
 ## Usage
 
