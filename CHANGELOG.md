@@ -16,7 +16,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.3.0] - 2025-??-??
+## [0.3.0] - 2025-08-05
 
 ### Added
 - 'bytes::BytesMut' as writer target
