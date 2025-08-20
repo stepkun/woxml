@@ -27,6 +27,8 @@ fn create_xml(
 	writer.begin_elem("stuff")?;
 	writer.cdata("blablab")?;
 	writer.end_elem()?;
+	writer.begin_elem("no_children")?;
+	writer.end_elem()?;
 	writer.end_elem()?;
 	writer.close()?;
 	writer.flush()
@@ -46,7 +48,7 @@ fn compact() -> Result<(), woxml::Error> {
 	println!("{}", str::from_utf8(&actual).expect("should not happen"));
 	assert_eq!(
 		str::from_utf8(&actual).expect("should not happen"),
-		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>"
+		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff><no_children/></OTDS>"
 	);
 	Ok(())
 }
@@ -65,7 +67,7 @@ fn pretty() -> Result<(), woxml::Error> {
 	println!("{}", str::from_utf8(&actual).expect("should not happen"));
 	assert_eq!(
 		str::from_utf8(&actual).expect("should not happen"),
-		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- nice to see you -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n</OTDS>"
+		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- nice to see you -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n  <no_children/>\n</OTDS>"
 	);
 	Ok(())
 }

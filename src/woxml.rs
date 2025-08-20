@@ -2,7 +2,6 @@
 // Copyright © of xml_writer::XmlWriter Piotr Zolnierek
 
 use alloc::{boxed::Box, string::ToString, vec::Vec};
-use core::fmt::{Debug, Formatter};
 
 use crate::{
 	error::{Error, Result},
@@ -19,13 +18,17 @@ const EQUAL_QUOTE: &str = "=\"";
 const QUOTE: &str = "\"";
 
 /// The `XmlWriter` himself.
-pub struct XmlWriter<'a, Buf: Write> {
+/// Elements without children are automatically self-closing.
+/// In 'pretty' mode the writer will
+/// - indent all opening elements on a new line
+/// - put closing elements into own line
+pub struct XmlWriter<'a, Buffer: Write> {
 	/// element stack
 	/// `bool` indicates element having children
 	stack: Vec<(&'a str, bool)>,
 	/// namespace stack
 	ns_stack: Vec<Option<&'a str>>,
-	writer: Box<Buf>,
+	buffer: Box<Buffer>,
 	/// An XML namespace that all elements will be part of, unless `None`
 	namespace: Option<&'a str>,
 	/// If `true` it will
@@ -33,14 +36,14 @@ pub struct XmlWriter<'a, Buf: Write> {
 	/// - put closing elements into own line
 	/// - elements without children are automatically self-closing
 	pretty: bool,
-	/// if `true` current element is open
+	/// if `true` an element is open
 	opened: bool,
 	/// newline/indentation indicator
 	newline: bool,
 }
 
-impl<Buf: Write> Debug for XmlWriter<'_, Buf> {
-	fn fmt(&self, f: &mut Formatter) -> core::fmt::Result {
+impl<Buffer: Write> core::fmt::Debug for XmlWriter<'_, Buffer> {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(write!(
 			f,
 			"XmlWriter {{ stack: {:?}, namespaces: {:?}, opened: {} }}",
@@ -50,12 +53,14 @@ impl<Buf: Write> Debug for XmlWriter<'_, Buf> {
 }
 
 impl<'a, W: Write> XmlWriter<'a, W> {
-	/// Create a new writer with `compact` output
-	pub fn compact_mode(writer: W) -> Self {
+	/// Create a new writer with `compact` output which will
+	/// - omit all indentations and newlines
+	/// - elements without children are automatically self-closing
+	pub fn compact_mode(buffer: W) -> Self {
 		XmlWriter {
 			stack: Vec::new(),
 			ns_stack: Vec::new(),
-			writer: Box::new(writer),
+			buffer: Box::new(buffer),
 			namespace: None,
 			pretty: false,
 			opened: false,
@@ -63,12 +68,15 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 		}
 	}
 
-	/// Create a new writer with `pretty` output
-	pub fn pretty_mode(writer: W) -> Self {
+	/// Create a new writer with `pretty` output which will
+	/// - indent all opening elements on a new line
+	/// - put closing elements into own line
+	/// - elements without children are automatically self-closing
+	pub fn pretty_mode(buffer: W) -> Self {
 		XmlWriter {
 			stack: Vec::new(),
 			ns_stack: Vec::new(),
-			writer: Box::new(writer),
+			buffer: Box::new(buffer),
 			namespace: None,
 			pretty: true,
 			opened: false,
@@ -211,10 +219,10 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// - if writing to buffer fails
 	fn close_elem(&mut self, has_children: bool) -> Result<()> {
 		if self.opened {
-			if self.pretty && !has_children {
-				self.write(CLOSE_CLOSE)?;
-			} else {
+			if has_children {
 				self.write(CLOSE)?;
+			} else {
+				self.write(CLOSE_CLOSE)?;
 			}
 			self.opened = false;
 		}
@@ -233,16 +241,14 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 		};
 		match self.stack.pop() {
 			Some((name, children)) => {
-				if self.pretty {
-					// elem without children have been self-closed
-					if !children {
-						return Ok(());
-					}
-					if self.newline {
-						self.indent()?;
-					}
-					self.newline = true;
+				// elem without children have been self-closed
+				if !children {
+					return Ok(());
 				}
+				if self.newline {
+					self.indent()?;
+				}
+				self.newline = true;
 				self.write(SELF_CLOSE_OPEN)?;
 				self.ns_prefix(ns)?;
 				self.write(name)?;
@@ -338,7 +344,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// # Errors
 	/// - if writing to buffer fails
 	pub fn write(&mut self, text: &str) -> Result<()> {
-		self.writer.write_all(text.as_bytes())?;
+		self.buffer.write_all(text.as_bytes())?;
 		Ok(())
 	}
 
@@ -346,7 +352,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// # Errors
 	/// - if writing to buffer fails
 	fn write_slice(&mut self, slice: &[u8]) -> Result<()> {
-		self.writer.write_all(slice)?;
+		self.buffer.write_all(slice)?;
 		Ok(())
 	}
 
@@ -398,13 +404,13 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// # Errors
 	/// - if writing to buffer fails
 	pub fn flush(&mut self) -> Result<()> {
-		self.writer.flush()?;
+		self.buffer.flush()?;
 		Ok(())
 	}
 
 	/// Consume the `XmlWriter` and return the inner Writer
 	#[must_use]
 	pub fn into_inner(self) -> W {
-		*self.writer
+		*self.buffer
 	}
 }

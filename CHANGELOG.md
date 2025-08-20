@@ -16,18 +16,13 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.4.0] - 2025-??-??
-
-### Added
+## [0.4.0] - 2025-08-20
 
 ### Changed
-- Error messages are non_exhaustive
+- elements without children are in compact mode always self-closing
 - no longer panics but errors when closing more elements/namespaces than opened
 - no longer panics but errors when writing without an open element
-
-### Fixed
-
-### Removed
+- Error messages are non_exhaustive
 
 ## [0.3.0] - 2025-08-05
 

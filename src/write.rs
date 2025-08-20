@@ -10,7 +10,6 @@ pub trait Write {
 	fn flush(&mut self) -> Result<()>;
 
 	/// Writes a buffer into this writer, returning how many bytes were written.
-	///
 	/// # Errors
 	/// Each call to write may generate an I/O error indicating that the operation could not be completed. If an error is returned then no bytes in the buffer were written to this writer.
 	/// It is not considered an error if the entire buffer could not be written to this writer.
