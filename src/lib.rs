@@ -3,6 +3,13 @@
 #![no_std]
 #![doc = include_str!("../README.md")]
 
-mod woxml;
+#[doc(hidden)]
+extern crate alloc;
 
-pub use woxml::{Error, Write, XmlWriter};
+mod error;
+mod woxml;
+mod write;
+
+pub use error::Error;
+pub use woxml::XmlWriter;
+pub use write::Write;

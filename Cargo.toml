@@ -2,7 +2,7 @@
 [package]
 resolver = "3"
 name = "woxml"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 license = "MIT/Apache-2.0"
 authors = ["stepkun <stephan.kunz@kabelbw.de>"]
@@ -11,12 +11,7 @@ repository = "https://github.com/stepkun/woxml.git"
 homepage = "http://github.com/stepkun/woxml.git"
 documentation = "https://docs.rs/woxml"
 readme = "README.md"
-exclude = [
-    "benches/**",
-    "embedded/**",
-    "examples/**",
-    "tests/**",
-]
+exclude = ["benches/**", "embedded/**", "examples/**", "tests/**"]
 
 [lib]
 name = "woxml"
@@ -44,7 +39,7 @@ name = "woxml"
 harness = false
 
 [dependencies]
-bytes = {version = "1", default-features = false }
+bytes = { version = "1", default-features = false }
 thiserror = { version = "2", default-features = false }
 
 [build-dependencies]
