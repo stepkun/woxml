@@ -1,8 +1,8 @@
-# Copyright © Stephan Kunz
+# Copyright © 2025 Stephan Kunz
 [package]
 resolver = "3"
 name = "woxml"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 license = "MIT/Apache-2.0"
 authors = ["stepkun <stephan.kunz@kabelbw.de>"]
@@ -11,6 +11,8 @@ repository = "https://github.com/stepkun/woxml.git"
 homepage = "http://github.com/stepkun/woxml.git"
 documentation = "https://docs.rs/woxml"
 readme = "README.md"
+keywords = ["xml"]
+categories = ["development-tools"]
 exclude = ["laze*", "benches/**", "embedded/**", "examples/**", "tests/**"]
 
 [lib]
