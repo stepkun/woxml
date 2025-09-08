@@ -1,13 +1,20 @@
 // Copyright © 2025 Stephan Kunz
 // Copyright © of xml_writer::XmlWriter Piotr Zolnierek
 
-use alloc::{boxed::Box, string::ToString, vec::Vec};
+// region:		--- modules
+use alloc::{
+	boxed::Box,
+	string::{String, ToString},
+	vec::Vec,
+};
 
 use crate::{
 	error::{Error, Result},
 	write::Write,
 };
+// endregion:	--- modules
 
+// region:		--- constants
 /// Multiple used literal definitions
 const CLOSE: &str = ">";
 const CLOSE_CLOSE: &str = "/>";
@@ -16,7 +23,9 @@ const SELF_CLOSE_OPEN: &str = "</";
 const SPACE: &str = " ";
 const EQUAL_QUOTE: &str = "=\"";
 const QUOTE: &str = "\"";
+// endregion:	--- constants
 
+// region:		--- XmlWriter
 /// The `XmlWriter` himself.
 /// Elements without children are automatically self-closing.
 /// In 'pretty' mode the writer will
@@ -414,3 +423,72 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 		*self.buffer
 	}
 }
+// endregion:	--- XmlWriter
+
+// region:		--- vec<u8>
+/// Fallible conversion to [`String`] for [`Vec<u8>`].
+impl<'a> TryFrom<XmlWriter<'a, Vec<u8>>> for String {
+	type Error = Error;
+
+	fn try_from(writer: XmlWriter<'a, Vec<u8>>) -> core::result::Result<Self, Self::Error> {
+		Self::from_utf8(writer.into_inner()).map_or(Err(Error::ParsingUtf8), Ok)
+	}
+}
+
+/// [`Write`] implementation for [`Vec<u8>`].
+impl Write for alloc::vec::Vec<u8> {
+	#[inline]
+	fn flush(&mut self) -> Result<()> {
+		Ok(())
+	}
+
+	#[inline]
+	fn write(&mut self, buf: &[u8]) -> Result<usize> {
+		self.extend_from_slice(buf);
+		Ok(buf.len())
+	}
+
+	#[inline]
+	fn write_all(&mut self, data: &[u8]) -> Result<()> {
+		if self.write(data)? < data.len() {
+			Err(Error::WriteAllEof)
+		} else {
+			Ok(())
+		}
+	}
+}
+// endregion:	--- Vec<u8>
+
+// region:		--- BytesMut
+/// Fallible conversion to [`String`] for [`bytes::BytesMut`].
+impl<'a> TryFrom<XmlWriter<'a, bytes::BytesMut>> for String {
+	type Error = Error;
+
+	fn try_from(writer: XmlWriter<'a, bytes::BytesMut>) -> core::result::Result<Self, Self::Error> {
+		Self::from_utf8(writer.into_inner().to_vec()).map_or(Err(Error::ParsingUtf8), Ok)
+	}
+}
+
+/// [`Write`] implementation for [`bytes::BytesMut`].
+impl Write for bytes::BytesMut {
+	#[inline]
+	fn flush(&mut self) -> Result<()> {
+		Ok(())
+	}
+
+	#[inline]
+	fn write(&mut self, buf: &[u8]) -> Result<usize> {
+		self.extend_from_slice(buf);
+		Ok(buf.len())
+	}
+
+	#[inline]
+	fn write_all(&mut self, data: &[u8]) -> Result<()> {
+		if self.write(data)? < data.len() {
+			Err(Error::WriteAllEof)
+		} else {
+			Ok(())
+		}
+	}
+}
+// endregion:	--- BytesMut

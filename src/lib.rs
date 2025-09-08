@@ -1,5 +1,4 @@
 // Copyright © 2025 Stephan Kunz
-// Copyright © of crate 'xml_writer' Piotr Zolnierek
 #![no_std]
 #![doc = include_str!("../README.md")]
 
@@ -10,6 +9,7 @@ mod error;
 mod woxml;
 mod write;
 
+// flatten
 pub use error::Error;
 pub use woxml::XmlWriter;
 pub use write::Write;

@@ -1,4 +1,5 @@
 // Copyright © 2025 Stephan Kunz
+//! Definition of the [`Write`] trait.
 
 use crate::error::{Error, Result};
 
@@ -11,7 +12,8 @@ pub trait Write {
 
 	/// Writes a buffer into this writer, returning how many bytes were written.
 	/// # Errors
-	/// Each call to write may generate an I/O error indicating that the operation could not be completed. If an error is returned then no bytes in the buffer were written to this writer.
+	/// Each call to write may generate an I/O error indicating that the operation could not be completed.
+	/// If an error is returned then no bytes in the buffer were written to this writer.
 	/// It is not considered an error if the entire buffer could not be written to this writer.
 	fn write(&mut self, buf: &[u8]) -> Result<usize>;
 
@@ -33,51 +35,5 @@ pub trait Write {
 			}
 		}
 		Ok(())
-	}
-}
-
-/// [`Write`] implementation for Vec<u8>.
-impl Write for alloc::vec::Vec<u8> {
-	#[inline]
-	fn flush(&mut self) -> Result<()> {
-		Ok(())
-	}
-
-	#[inline]
-	fn write(&mut self, buf: &[u8]) -> Result<usize> {
-		self.extend_from_slice(buf);
-		Ok(buf.len())
-	}
-
-	#[inline]
-	fn write_all(&mut self, data: &[u8]) -> Result<()> {
-		if self.write(data)? < data.len() {
-			Err(Error::WriteAllEof)
-		} else {
-			Ok(())
-		}
-	}
-}
-
-/// [`Write`] implementation for [`bytes::BytesMut`].
-impl Write for bytes::BytesMut {
-	#[inline]
-	fn flush(&mut self) -> Result<()> {
-		Ok(())
-	}
-
-	#[inline]
-	fn write(&mut self, buf: &[u8]) -> Result<usize> {
-		self.extend_from_slice(buf);
-		Ok(buf.len())
-	}
-
-	#[inline]
-	fn write_all(&mut self, data: &[u8]) -> Result<()> {
-		if self.write(data)? < data.len() {
-			Err(Error::WriteAllEof)
-		} else {
-			Ok(())
-		}
 	}
 }

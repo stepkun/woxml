@@ -7,13 +7,13 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// Things that may go wrong during creation of the XML.
 #[non_exhaustive]
 pub enum Error {
-	/// Closing an elemtent without haviong one opened.
+	/// Closing an elemtent without having one opened.
 	CloseElement,
 	/// Closing a namespace without having one opened.
 	CloseNamespace,
 	/// Opening a namespace without having an element.
 	OpenNamespaceWithoutElement,
-	/// Attept to write without having an element opened.
+	/// Attempt to write without having an element opened.
 	WriteWithoutElement,
 	/// Writing the buffer failed.
 	WriteAllEof,
@@ -57,7 +57,7 @@ impl core::fmt::Display for Error {
 				"attempted to write namespace declaration to 'elem', when no 'elem' was opened"
 			),
 			Self::WriteWithoutElement => write!(f, "attempted to write 'attr' to 'elem', when no 'elem' was opened"),
-			Self::WriteAllEof => write!(f, "failed to write whole buffer"),
+			Self::WriteAllEof => write!(f, "failed to write buffer"),
 			Self::ParsingUtf8 => write!(f, "failed parsing buffer as UTF8"),
 		}
 	}
