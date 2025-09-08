@@ -44,7 +44,6 @@ harness = false
 
 [dependencies]
 bytes = { version = "1", default-features = false }
-thiserror = { version = "2", default-features = false }
 
 [build-dependencies]
 
@@ -53,4 +52,4 @@ criterion = "0.7.0"
 
 [features]
 default = ["std"]
-std = ["bytes/std", "thiserror/std"]
+std = ["bytes/std"]
