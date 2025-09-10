@@ -37,8 +37,7 @@ xml.end_elem();
 xml.close(); // This will also close all open elements
 xml.flush();
 
-let actual = xml.into_inner();
-println!("{}", str::from_utf8(&actual).unwrap())
+println!("{}", String::try_from(xml).unwrap())
 ```
 
 ## License

@@ -44,10 +44,10 @@ fn compact() -> Result<(), woxml::Error> {
 
 	create_xml(&mut writer, &nsmap)?;
 
-	let actual = writer.into_inner();
-	println!("{}", str::from_utf8(&actual).expect("should not happen"));
+	let xml = String::try_from(writer).unwrap();
+	println!("{}", &xml);
 	assert_eq!(
-		str::from_utf8(&actual).expect("should not happen"),
+		&xml,
 		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff><no_children/></OTDS>"
 	);
 	Ok(())
@@ -63,10 +63,10 @@ fn pretty() -> Result<(), woxml::Error> {
 
 	create_xml(&mut writer, &nsmap)?;
 
-	let actual = writer.into_inner();
-	println!("{}", str::from_utf8(&actual).expect("should not happen"));
+	let xml = String::try_from(writer).unwrap();
+	println!("{}", &xml);
 	assert_eq!(
-		str::from_utf8(&actual).expect("should not happen"),
+		&xml,
 		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\">\n  <!-- nice to see you -->\n  <st:success/>\n  <st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node>\n  <stuff>\n    <![CDATA[blablab]]>\n  </stuff>\n  <no_children/>\n</OTDS>"
 	);
 	Ok(())
@@ -77,14 +77,14 @@ fn comment() -> Result<(), woxml::Error> {
 	let mut xml = XmlWriter::pretty_mode(Vec::new());
 	xml.comment("comment")?;
 
-	let actual = xml.into_inner();
-	assert_eq!(str::from_utf8(&actual).expect("should not happen"), "<!-- comment -->");
+	let res = String::try_from(xml).unwrap();
+	assert_eq!(&res, "<!-- comment -->");
 
 	let mut xml = XmlWriter::compact_mode(Vec::new());
 	xml.comment("comment")?;
 
-	let actual = xml.into_inner();
-	assert_eq!(str::from_utf8(&actual).expect("should not happen"), "<!-- comment -->");
+	let res = String::try_from(xml).unwrap();
+	assert_eq!(&res, "<!-- comment -->");
 	Ok(())
 }
 
@@ -115,10 +115,10 @@ fn buffer() -> Result<(), woxml::Error> {
 	writer.close()?;
 	writer.flush()?;
 
-	let actual = writer.into_inner();
-	println!("{}", str::from_utf8(&actual).expect("should not happen"));
+	let xml = String::try_from(writer).unwrap();
+	println!("{}", &xml);
 	assert_eq!(
-		str::from_utf8(&actual).expect("should not happen"),
+		&xml,
 		"<OTDS xmlns=\"http://localhost/\" xmlns:st=\"http://127.0.0.1/\"><!-- nice to see you --><st:success/><st:node name=\"&quot;123&quot;\" id=\"abc\" \'unescaped\'=\"\"123\"\">&apos;text&apos;</st:node><stuff><![CDATA[blablab]]></stuff></OTDS>"
 	);
 	Ok(())
