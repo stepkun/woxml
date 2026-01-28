@@ -1,0 +1,44 @@
+# Copyright © 2026 Stephan Kunz
+# Preconditions:
+#    rustup component add llvm-tools-preview --toolchain nightly-x86_64-unknown-linux-gnu
+#    cargo install cargo-make cargo-fuzz cargo-llvm-cov
+
+[tasks.cov]
+toolchain = "nightly"
+#install_crate = "cargo-llvm-cov"
+command = "cargo"
+args = [
+    "llvm-cov",
+    "test",
+    "--html",
+    "--color=always",
+    "--all-features",
+    "--all-targets",
+    "--show-missing-lines",
+    "--show-instantiations",
+    "--branch",              # currently unstable, superceeded by --mcdc, not usable together
+    #"--mcdc",      # currently unstable, does not work
+    "--workspace",
+    "--offline",
+]
+
+[tasks.cov-summary]
+toolchain = "nightly"
+#install_crate = "cargo-llvm-cov"
+command = "cargo"
+args = [
+    "llvm-cov",
+    "test",
+    "--no-clean",
+    "--json",                # for summary-only!
+    "--summary-only",
+    "--output-path",
+    "mcdc.json",
+    "--color=always",
+    "--all-features",
+    "--all-targets",
+    "--show-instantiations",
+    "--branch",              # currently unstable, superceeded by --mcdc, not usable together
+    #"--mcdc",                # currently unstable, does not work
+    "--locked",
+]

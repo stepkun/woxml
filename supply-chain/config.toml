@@ -44,10 +44,6 @@ criteria = "safe-to-run"
 version = "0.7.0"
 criteria = "safe-to-run"
 
-[[exemptions.criterion-plot]]
-version = "0.6.0"
-criteria = "safe-to-run"
-
 [[exemptions.crossbeam-deque]]
 version = "0.8.6"
 criteria = "safe-to-run"
@@ -90,10 +86,6 @@ criteria = "safe-to-run"
 
 [[exemptions.regex-syntax]]
 version = "0.8.6"
-criteria = "safe-to-run"
-
-[[exemptions.ryu]]
-version = "1.0.20"
 criteria = "safe-to-run"
 
 [[exemptions.syn]]

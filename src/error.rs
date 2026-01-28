@@ -37,19 +37,6 @@ impl core::error::Error for Error {
 impl core::fmt::Debug for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
-			Self::CloseElement => write!(f, "CloseElement"),
-			Self::CloseNamespace => write!(f, "CloseNamespace"),
-			Self::OpenNamespaceWithoutElement => write!(f, "OpenNamespaceWithoutElement"),
-			Self::WriteWithoutElement => write!(f, "WriteWithoutElement"),
-			Self::WriteAllEof => write!(f, "WriteAllEof"),
-			Self::ParsingUtf8 => write!(f, "ConversionToString"),
-		}
-	}
-}
-
-impl core::fmt::Display for Error {
-	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		match self {
 			Self::CloseElement => write!(f, "attempted to close 'elem', when none was open"),
 			Self::CloseNamespace => write!(f, "attempted to close namespaced 'elem' without corresponding open namespace"),
 			Self::OpenNamespaceWithoutElement => write!(
@@ -60,5 +47,11 @@ impl core::fmt::Display for Error {
 			Self::WriteAllEof => write!(f, "failed to write buffer"),
 			Self::ParsingUtf8 => write!(f, "failed parsing buffer as UTF8"),
 		}
+	}
+}
+
+impl core::fmt::Display for Error {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		core::fmt::Debug::fmt(self, f)
 	}
 }
