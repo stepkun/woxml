@@ -1,0 +1,17 @@
+# Copyright © 2025 Stephan Kunz
+imports:
+  - git:
+      url: https://github.com/ariel-os/ariel-os
+      tag: v0.2.1
+#      branch: main
+    dldir: ariel-os
+
+defaults:
+  apps:
+    context:
+      - ariel-os
+
+subdirs:
+  - usage
+  - testing
+  - benchmark

@@ -1,9 +1,3 @@
-defaults:
-  apps:
-    context:
-      - ariel-os
-
+# Copyright © 2025 Stephan Kunz
 subdirs:
-  - usage
-  - testing
-  - benchmark
+  - ariel-os
