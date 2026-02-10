@@ -19,7 +19,7 @@ args = [
     "--branch",              # currently unstable, superceeded by --mcdc, not usable together
     #"--mcdc",      # currently unstable, does not work
     "--workspace",
-    "--offline",
+    #"--offline",
 ]
 
 [tasks.cov-summary]
