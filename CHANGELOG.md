@@ -16,10 +16,11 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.4.1] - 2026-??-??
+## [0.4.2] - 2026-??-??
 
 ### Changed
 - Debug print is same as Display print
+- use ariel-os v0.3.0 for embedded tests
 
 ## [0.4.1] - 2025-09-08
 
