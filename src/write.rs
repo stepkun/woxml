@@ -25,6 +25,7 @@ pub trait Write {
 	/// This method will not return until the entire buffer has been successfully written or an error occurs.
 	/// # Errors
 	/// This function will return the first error that write returns.
+	#[cfg_attr(coverage_nightly, coverage(off))]
 	fn write_all(&mut self, mut buf: &[u8]) -> Result<(), Error> {
 		while !buf.is_empty() {
 			match self.write(buf) {

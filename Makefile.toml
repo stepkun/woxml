@@ -33,11 +33,29 @@ args = [
     "--json",                # for summary-only!
     "--summary-only",
     "--output-path",
-    "mcdc.json",
+    "mcdc/mcdc.json",
     "--color=always",
     "--all-features",
     "--all-targets",
     "--show-instantiations",
+    "--branch",              # currently unstable, superceeded by --mcdc, not usable together
+    #"--mcdc",                # currently unstable, does not work
+    "--locked",
+]
+
+[tasks.cov-html]
+toolchain = "nightly"
+#install_crate = "cargo-llvm-cov"
+command = "cargo"
+args = [
+    "llvm-cov",
+    "test",
+    "--html",
+    "--output-dir",
+    "mcdc",
+    "--color=always",
+    "--all-features",
+    "--all-targets",
     "--branch",              # currently unstable, superceeded by --mcdc, not usable together
     #"--mcdc",                # currently unstable, does not work
     "--locked",

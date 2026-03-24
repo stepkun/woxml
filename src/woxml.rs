@@ -31,11 +31,8 @@ const QUOTE: &str = "\"";
 /// - indent all opening elements on a new line
 /// - put closing elements into own line
 pub struct XmlWriter<'a, Buffer: Write> {
-	/// element stack
-	/// `bool` indicates element having children
-	stack: Vec<(&'a str, bool)>,
-	/// namespace stack
-	ns_stack: Vec<Option<&'a str>>,
+	/// element stack: (name, `has_children`, namespace at time of push)
+	stack: Vec<(&'a str, bool, Option<&'a str>)>,
 	buffer: Box<Buffer>,
 	/// An XML namespace that all elements will be part of, unless `None`
 	namespace: Option<&'a str>,
@@ -52,11 +49,7 @@ pub struct XmlWriter<'a, Buffer: Write> {
 
 impl<Buffer: Write> core::fmt::Debug for XmlWriter<'_, Buffer> {
 	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-		Ok(write!(
-			f,
-			"XmlWriter {{ stack: {:?}, namespaces: {:?}, opened: {} }}",
-			self.stack, self.ns_stack, self.opened
-		)?)
+		write!(f, "XmlWriter {{ stack: {:?}, opened: {} }}", self.stack, self.opened)
 	}
 }
 
@@ -67,7 +60,6 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	pub fn compact_mode(buffer: W) -> Self {
 		XmlWriter {
 			stack: Vec::new(),
-			ns_stack: Vec::new(),
 			buffer: Box::new(buffer),
 			namespace: None,
 			pretty: false,
@@ -83,7 +75,6 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	pub fn pretty_mode(buffer: W) -> Self {
 		XmlWriter {
 			stack: Vec::new(),
-			ns_stack: Vec::new(),
 			buffer: Box::new(buffer),
 			namespace: None,
 			pretty: true,
@@ -212,8 +203,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 			self.stack.push(previous);
 		}
 		self.indent()?;
-		self.stack.push((name, false));
-		self.ns_stack.push(self.namespace);
+		self.stack.push((name, false, self.namespace));
 		self.write(OPEN)?;
 		self.opened = true;
 		// stderr().write_fmt(format_args!("\nbegin {}", name));
@@ -240,15 +230,11 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// End and elem
 	/// # Errors
 	/// - if writing to buffer fails
-	/// - when trying to close a namespace without having one opened
 	/// - when trying to close an element without having one opened
 	pub fn end_elem(&mut self) -> Result<(), Error> {
 		self.close_elem(false)?;
-		let Some(ns) = self.ns_stack.pop() else {
-			return Err(Error::CloseNamespace);
-		};
 		match self.stack.pop() {
-			Some((name, children)) => {
+			Some((name, children, ns)) => {
 				// elem without children have been self-closed
 				if !children {
 					return Ok(());
@@ -446,15 +432,6 @@ impl Write for alloc::vec::Vec<u8> {
 		self.extend_from_slice(buf);
 		Ok(buf.len())
 	}
-
-	#[inline]
-	fn write_all(&mut self, data: &[u8]) -> Result<(), Error> {
-		if self.write(data)? < data.len() {
-			Err(Error::WriteAllEof)
-		} else {
-			Ok(())
-		}
-	}
 }
 // endregion:	--- Vec<u8>
 
@@ -479,15 +456,6 @@ impl Write for bytes::BytesMut {
 	fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
 		self.extend_from_slice(buf);
 		Ok(buf.len())
-	}
-
-	#[inline]
-	fn write_all(&mut self, data: &[u8]) -> Result<(), Error> {
-		if self.write(data)? < data.len() {
-			Err(Error::WriteAllEof)
-		} else {
-			Ok(())
-		}
 	}
 }
 // endregion:	--- BytesMut
