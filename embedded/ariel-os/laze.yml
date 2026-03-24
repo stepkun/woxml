@@ -2,8 +2,7 @@
 imports:
   - git:
       url: https://github.com/ariel-os/ariel-os
-      tag: v0.3.0
-#      tag: v0.4.0
+      tag: v0.4.0
 #      branch: main
     dldir: ariel-os
 

@@ -20,7 +20,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Changed
 - Debug print is same as Display print
-- use ariel-os v0.3.0 for embedded tests
+- use ariel-os v0.4.0 for embedded tests
 
 ## [0.4.1] - 2025-09-08
 
