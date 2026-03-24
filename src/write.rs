@@ -21,10 +21,13 @@ pub trait Write {
 
 	/// Attempts to write an entire buffer into this writer.
 	///
-	/// This method will continuously call write until there is no more data to be written.
-	/// This method will not return until the entire buffer has been successfully written or an error occurs.
+	/// This method shall continuously call write until there is no more data to be written.
+	/// This method shall not return until the entire buffer has been successfully written or an error occurs.
 	/// # Errors
-	/// This function will return the first error that write returns.
+	/// This function shall return the first error that write returns.
+	///
+	/// Note: The default implementation is not used in this crate,
+	/// so it is not fully tested and therefore excluded from coverage.
 	#[cfg_attr(coverage_nightly, coverage(off))]
 	fn write_all(&mut self, mut buf: &[u8]) -> Result<(), Error> {
 		while !buf.is_empty() {

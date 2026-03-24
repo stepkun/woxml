@@ -22,6 +22,7 @@ name = "woxml"
 missing_docs = "warn"
 unexpected_cfgs = { level = "warn", check-cfg = [
   'cfg(context, values(any()))',
+  'cfg(coverage_nightly)',
 ] }
 unsafe_code = "warn"
 unused_must_use = "warn"
