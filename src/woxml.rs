@@ -8,10 +8,9 @@ use alloc::{
 	vec::Vec,
 };
 
-use crate::{
-	error::{Error, Result},
-	write::Write,
-};
+use core::result::Result;
+
+use crate::{error::Error, write::Write};
 // endregion:	--- modules
 
 // region:		--- constants
@@ -122,13 +121,13 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Write the DTD.
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn dtd(&mut self, encoding: &str) -> Result<()> {
+	pub fn dtd(&mut self, encoding: &str) -> Result<(), Error> {
 		self.write("<?xml version=\"1.0\" encoding=\"")?;
 		self.write(encoding)?;
 		self.write("\" ?>\n")
 	}
 
-	fn indent(&mut self) -> Result<()> {
+	fn indent(&mut self) -> Result<(), Error> {
 		if self.pretty {
 			if self.newline {
 				self.write("\n")?;
@@ -144,7 +143,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 
 	/// Write a namespace prefix for the current element,
 	/// if there is one set
-	fn ns_prefix(&mut self, namespace: Option<&'a str>) -> Result<()> {
+	fn ns_prefix(&mut self, namespace: Option<&'a str>) -> Result<(), Error> {
 		if let Some(ns) = namespace {
 			self.write(ns)?;
 			self.write(":")?;
@@ -156,7 +155,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// # Errors
 	/// - if writing to buffer fails
 	/// - when opening a namespace without having an element
-	pub fn ns_decl(&mut self, ns_map: &Vec<(Option<&'a str>, &'a str)>) -> Result<()> {
+	pub fn ns_decl(&mut self, ns_map: &Vec<(Option<&'a str>, &'a str)>) -> Result<(), Error> {
 		if !self.opened {
 			return Err(Error::OpenNamespaceWithoutElement);
 		}
@@ -173,7 +172,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Write a self-closing element like <br/>.
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn elem(&mut self, name: &str) -> Result<()> {
+	pub fn elem(&mut self, name: &str) -> Result<(), Error> {
 		self.close_elem(false)?;
 		self.indent()?;
 		self.write(OPEN)?;
@@ -186,7 +185,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Write an element with inlined text content (escaped)
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn elem_text(&mut self, name: &str, text: &str) -> Result<()> {
+	pub fn elem_text(&mut self, name: &str, text: &str) -> Result<(), Error> {
 		self.close_elem(false)?;
 		self.indent()?;
 		self.write(OPEN)?;
@@ -205,7 +204,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Begin an elem, make sure name contains only allowed chars
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn begin_elem(&mut self, name: &'a str) -> Result<()> {
+	pub fn begin_elem(&mut self, name: &'a str) -> Result<(), Error> {
 		self.close_elem(true)?;
 		// change previous elem to having children
 		if let Some(mut previous) = self.stack.pop() {
@@ -226,7 +225,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Close an elem if open, do nothing otherwise.
 	/// # Errors
 	/// - if writing to buffer fails
-	fn close_elem(&mut self, has_children: bool) -> Result<()> {
+	fn close_elem(&mut self, has_children: bool) -> Result<(), Error> {
 		if self.opened {
 			if has_children {
 				self.write(CLOSE)?;
@@ -243,7 +242,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// - if writing to buffer fails
 	/// - when trying to close a namespace without having one opened
 	/// - when trying to close an element without having one opened
-	pub fn end_elem(&mut self) -> Result<()> {
+	pub fn end_elem(&mut self) -> Result<(), Error> {
 		self.close_elem(false)?;
 		let Some(ns) = self.ns_stack.pop() else {
 			return Err(Error::CloseNamespace);
@@ -271,7 +270,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Begin an empty elem
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn empty_elem(&mut self, name: &'a str) -> Result<()> {
+	pub fn empty_elem(&mut self, name: &'a str) -> Result<(), Error> {
 		self.close_elem(true)?;
 		// change previous elem to having children
 		if let Some(mut previous) = self.stack.pop() {
@@ -291,7 +290,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// # Errors
 	/// - if writing to buffer fails
 	/// - when writing attributes without having an element
-	pub fn attr(&mut self, name: &str, value: &str) -> Result<()> {
+	pub fn attr(&mut self, name: &str, value: &str) -> Result<(), Error> {
 		if !self.opened {
 			return Err(Error::WriteWithoutElement);
 		}
@@ -306,7 +305,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// # Errors
 	/// - if writing to buffer fails
 	/// - when writing attributes without having an element
-	pub fn attr_esc(&mut self, name: &str, value: &str) -> Result<()> {
+	pub fn attr_esc(&mut self, name: &str, value: &str) -> Result<(), Error> {
 		if !self.opened {
 			return Err(Error::WriteWithoutElement);
 		}
@@ -320,7 +319,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Escape identifiers or text.
 	/// # Errors
 	/// - if writing to buffer fails
-	fn escape(&mut self, text: &str, ident: bool) -> Result<()> {
+	fn escape(&mut self, text: &str, ident: bool) -> Result<(), Error> {
 		for c in text.chars() {
 			match c {
 				'"' => self.write("&quot;")?,
@@ -338,7 +337,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Write a text content, escapes the text automatically
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn text(&mut self, text: &str) -> Result<()> {
+	pub fn text(&mut self, text: &str) -> Result<(), Error> {
 		self.close_elem(true)?;
 		// change previous elem to having children
 		if let Some(mut previous) = self.stack.pop() {
@@ -352,7 +351,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Raw write, no escaping, no safety net, use at own risk
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn write(&mut self, text: &str) -> Result<()> {
+	pub fn write(&mut self, text: &str) -> Result<(), Error> {
 		self.buffer.write_all(text.as_bytes())?;
 		Ok(())
 	}
@@ -360,7 +359,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Raw write, no escaping, no safety net, use at own risk
 	/// # Errors
 	/// - if writing to buffer fails
-	fn write_slice(&mut self, slice: &[u8]) -> Result<()> {
+	fn write_slice(&mut self, slice: &[u8]) -> Result<(), Error> {
 		self.buffer.write_all(slice)?;
 		Ok(())
 	}
@@ -368,7 +367,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Write a CDATA.
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn cdata(&mut self, cdata: &str) -> Result<()> {
+	pub fn cdata(&mut self, cdata: &str) -> Result<(), Error> {
 		self.close_elem(true)?;
 		// change previous elem to having children
 		if let Some(mut previous) = self.stack.pop() {
@@ -386,7 +385,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Write a comment
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn comment(&mut self, comment: &str) -> Result<()> {
+	pub fn comment(&mut self, comment: &str) -> Result<(), Error> {
 		self.close_elem(true)?;
 		// change previous elem to having children
 		if let Some(mut previous) = self.stack.pop() {
@@ -402,7 +401,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Close all open elems
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn close(&mut self) -> Result<()> {
+	pub fn close(&mut self) -> Result<(), Error> {
 		for _ in 0..self.stack.len() {
 			self.end_elem()?;
 		}
@@ -412,7 +411,7 @@ impl<'a, W: Write> XmlWriter<'a, W> {
 	/// Flush the underlying Writer
 	/// # Errors
 	/// - if writing to buffer fails
-	pub fn flush(&mut self) -> Result<()> {
+	pub fn flush(&mut self) -> Result<(), Error> {
 		self.buffer.flush()?;
 		Ok(())
 	}
@@ -438,18 +437,18 @@ impl<'a> TryFrom<XmlWriter<'a, Vec<u8>>> for String {
 /// [`Write`] implementation for [`Vec<u8>`].
 impl Write for alloc::vec::Vec<u8> {
 	#[inline]
-	fn flush(&mut self) -> Result<()> {
+	fn flush(&mut self) -> Result<(), Error> {
 		Ok(())
 	}
 
 	#[inline]
-	fn write(&mut self, buf: &[u8]) -> Result<usize> {
+	fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
 		self.extend_from_slice(buf);
 		Ok(buf.len())
 	}
 
 	#[inline]
-	fn write_all(&mut self, data: &[u8]) -> Result<()> {
+	fn write_all(&mut self, data: &[u8]) -> Result<(), Error> {
 		if self.write(data)? < data.len() {
 			Err(Error::WriteAllEof)
 		} else {
@@ -472,18 +471,18 @@ impl<'a> TryFrom<XmlWriter<'a, bytes::BytesMut>> for String {
 /// [`Write`] implementation for [`bytes::BytesMut`].
 impl Write for bytes::BytesMut {
 	#[inline]
-	fn flush(&mut self) -> Result<()> {
+	fn flush(&mut self) -> Result<(), Error> {
 		Ok(())
 	}
 
 	#[inline]
-	fn write(&mut self, buf: &[u8]) -> Result<usize> {
+	fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
 		self.extend_from_slice(buf);
 		Ok(buf.len())
 	}
 
 	#[inline]
-	fn write_all(&mut self, data: &[u8]) -> Result<()> {
+	fn write_all(&mut self, data: &[u8]) -> Result<(), Error> {
 		if self.write(data)? < data.len() {
 			Err(Error::WriteAllEof)
 		} else {

@@ -16,11 +16,11 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.4.2] - 2026-??-??
+## [0.5.0] - 2026-??-??
 
 ### Changed
-- Debug print is same as Display print
 - use ariel-os v0.4.0 for embedded tests
+- use `thiserror` v2 with defaults = false
 
 ## [0.4.1] - 2025-09-08
 
@@ -28,7 +28,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 - TryFrom conversions to String
 
 ### Changed
-- Errorhandling no longer uses `thiserror`
+- Errorhandling no longer uses `thiserror` due to problems in embedded environments
 
 ## [0.4.0] - 2025-08-20
 
