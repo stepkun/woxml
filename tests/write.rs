@@ -1,6 +1,7 @@
-// Copyright © 2025 Stephan Kunz
+// Copyright © 2026 Stephan Kunz
 
 //! Tests for the [`Write`] trait and its default [`Write::write_all`] implementation.
+#![allow(clippy::unwrap_used)]
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -18,7 +19,7 @@ struct ChunkWriter {
 }
 
 impl ChunkWriter {
-	fn new(chunk_size: usize) -> Self {
+	const fn new(chunk_size: usize) -> Self {
 		Self {
 			buf: Vec::new(),
 			chunk_size,
@@ -39,8 +40,8 @@ impl Write for ChunkWriter {
 	// No write_all override → exercises the default trait implementation
 }
 
-/// A Write that always returns Ok(0) from write, triggering the WriteAllEof
-/// branch in the default write_all.
+/// A Write that always returns Ok(0) from write, triggering the `WriteAllEof`
+/// branch in the default `write_all`.
 struct StallWriter;
 
 impl Write for StallWriter {
@@ -54,7 +55,7 @@ impl Write for StallWriter {
 }
 
 /// A Write that always returns Err from write, triggering the Err branch
-/// in the default write_all.
+/// in the default `write_all`.
 struct FailWriter;
 
 impl Write for FailWriter {
@@ -102,6 +103,8 @@ fn default_write_all_error_propagates() {
 fn default_write_all_empty_buf() -> Result<(), Error> {
 	// write_all with an empty slice must succeed without calling write at all
 	let mut w = StallWriter;
+	w.write_all(b"")?;
+	let mut w = FailWriter;
 	w.write_all(b"")?;
 	Ok(())
 }

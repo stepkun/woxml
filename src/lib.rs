@@ -1,7 +1,7 @@
 // Copyright © 2025 Stephan Kunz
 #![no_std]
 #![doc = include_str!("../README.md")]
-#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+//#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 #[doc(hidden)]
 extern crate alloc;

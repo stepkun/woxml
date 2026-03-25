@@ -10,7 +10,10 @@ command = "cargo"
 args = [
     "llvm-cov",
     "test",
-    "--html",
+    "--json",
+    "--output-path",
+    "mcdc/mcdc.json",
+    #"--html",
     "--color=always",
     "--all-features",
     "--all-targets",
@@ -33,14 +36,16 @@ args = [
     "--json",                # for summary-only!
     "--summary-only",
     "--output-path",
-    "mcdc/mcdc.json",
+    "mcdc/summary.json",
     "--color=always",
     "--all-features",
     "--all-targets",
+    "--show-missing-lines",
     "--show-instantiations",
     "--branch",              # currently unstable, superceeded by --mcdc, not usable together
     #"--mcdc",                # currently unstable, does not work
-    "--locked",
+    #"--locked",
+    "--workspace",
 ]
 
 [tasks.cov-html]
@@ -56,7 +61,10 @@ args = [
     "--color=always",
     "--all-features",
     "--all-targets",
+    "--show-instantiations",
+    "--show-missing-lines",
     "--branch",              # currently unstable, superceeded by --mcdc, not usable together
-    #"--mcdc",                # currently unstable, does not work
-    "--locked",
+    #"--mcdc",   # currently unstable, does not work
+    #"--locked",
+    "--workspace",
 ]

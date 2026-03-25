@@ -25,10 +25,7 @@ pub trait Write {
 	/// This method shall not return until the entire buffer has been successfully written or an error occurs.
 	/// # Errors
 	/// This function shall return the first error that write returns.
-	///
-	/// Note: The default implementation is not used in this crate,
-	/// so it is not fully tested and therefore excluded from coverage.
-	#[cfg_attr(coverage_nightly, coverage(off))]
+	// #[cfg_attr(coverage_nightly, coverage(off))]
 	fn write_all(&mut self, mut buf: &[u8]) -> Result<(), Error> {
 		while !buf.is_empty() {
 			match self.write(buf) {
@@ -36,10 +33,39 @@ pub trait Write {
 					return Err(Error::WriteAllEof);
 				}
 				Ok(n) => buf = &buf[n..],
-				// Err(ref e) => e.is_interrupted() => {},
 				Err(e) => return Err(e),
 			}
 		}
 		Ok(())
+	}
+}
+
+//==== Implementations ====
+
+/// [`Write`] implementation for [`Vec<u8>`].
+impl Write for alloc::vec::Vec<u8> {
+	#[inline]
+	fn flush(&mut self) -> Result<(), Error> {
+		Ok(())
+	}
+
+	#[inline]
+	fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
+		self.extend_from_slice(buf);
+		Ok(buf.len())
+	}
+}
+
+/// [`Write`] implementation for [`bytes::BytesMut`].
+impl Write for bytes::BytesMut {
+	#[inline]
+	fn flush(&mut self) -> Result<(), Error> {
+		Ok(())
+	}
+
+	#[inline]
+	fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
+		self.extend_from_slice(buf);
+		Ok(buf.len())
 	}
 }

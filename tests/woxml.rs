@@ -1,11 +1,15 @@
-// Copyright © 2025 Stephan Kunz
+// Copyright © 2026 Stephan Kunz
 
 //! Testing of woxml library
+#![allow(clippy::unwrap_used)]
 
+extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-use std::{format, println, str, string::String, vec, vec::Vec};
+use alloc::{format, str, string::String, vec, vec::Vec};
+#[cfg(feature = "std")]
+use std::println;
 use woxml::{Error, XmlWriter};
 
 // ---- dtd -----------------------------------------------------------------------
@@ -106,10 +110,7 @@ fn elem_text_escapes_content() -> Result<(), Error> {
 	xml.elem_text("msg", "<b>bold</b> & 'quoted'")?;
 
 	let res = String::try_from(xml).unwrap();
-	assert_eq!(
-		&res,
-		"<msg>&lt;b&gt;bold&lt;/b&gt; &amp; &apos;quoted&apos;</msg>"
-	);
+	assert_eq!(&res, "<msg>&lt;b&gt;bold&lt;/b&gt; &amp; &apos;quoted&apos;</msg>");
 	Ok(())
 }
 
