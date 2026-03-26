@@ -80,6 +80,14 @@ fn default_write_all_chunks() -> Result<(), Error> {
 
 	let inner = xml.into_inner();
 	assert_eq!(&inner.buf, b"<root/>");
+	// same with chunk size > elements to write
+	let buf = ChunkWriter::new(10);
+	let mut xml = XmlWriter::compact_mode(buf);
+	xml.begin_elem("root")?;
+	xml.end_elem()?;
+
+	let inner = xml.into_inner();
+	assert_eq!(&inner.buf, b"<root/>");
 	Ok(())
 }
 
@@ -102,6 +110,8 @@ fn default_write_all_error_propagates() {
 #[test]
 fn default_write_all_empty_buf() -> Result<(), Error> {
 	// write_all with an empty slice must succeed without calling write at all
+	let mut w = ChunkWriter::new(5);
+	w.write_all(b"")?;
 	let mut w = StallWriter;
 	w.write_all(b"")?;
 	let mut w = FailWriter;
