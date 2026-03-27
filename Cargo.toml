@@ -13,7 +13,14 @@ documentation = "https://docs.rs/woxml"
 readme = "README.md"
 keywords = ["xml"]
 categories = ["development-tools"]
-exclude = ["laze*", "benches/**", "embedded/**", "examples/**", "tests/**"]
+exclude = [
+  "laze*",
+  "benches/**",
+  "coverage/**",
+  "embedded/**",
+  "examples/**",
+  "tests/**",
+]
 
 [lib]
 name = "woxml"

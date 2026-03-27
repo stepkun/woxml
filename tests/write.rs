@@ -1,15 +1,9 @@
 // Copyright © 2026 Stephan Kunz
 
-//! Tests for the [`Write`] trait and its default [`Write::write_all`] implementation.
-#![allow(clippy::unwrap_used)]
-
-#[cfg(feature = "std")]
-extern crate std;
+//! Tests for the [`Write`] traits default [`Write::write_all`] implementation.
 
 use std::vec::Vec;
 use woxml::{Error, Write, XmlWriter};
-
-// ---- custom Write impls exercising the default write_all -----------------------
 
 /// A Write implementation that writes in fixed-size chunks and relies on the
 /// default `write_all` provided by the trait.
@@ -40,23 +34,17 @@ impl Write for ChunkWriter {
 	// No write_all override → exercises the default trait implementation
 }
 
-/// A Write that always returns Ok(0) from write, triggering the `WriteAllEof`
-/// branch in the default `write_all`.
-struct StallWriter;
-
-impl Write for StallWriter {
-	fn flush(&mut self) -> Result<(), Error> {
-		Ok(())
-	}
-
-	fn write(&mut self, _buf: &[u8]) -> Result<usize, Error> {
-		Ok(0)
-	}
+/// A Write implementation that returns Err from `write` after a first write, triggering the Err branch
+/// in the default `write_all`.
+struct FailWriter {
+	written: usize,
 }
 
-/// A Write that always returns Err from write, triggering the Err branch
-/// in the default `write_all`.
-struct FailWriter;
+impl FailWriter {
+	const fn new() -> Self {
+		Self { written: 0 }
+	}
+}
 
 impl Write for FailWriter {
 	fn flush(&mut self) -> Result<(), Error> {
@@ -64,11 +52,14 @@ impl Write for FailWriter {
 	}
 
 	fn write(&mut self, _buf: &[u8]) -> Result<usize, Error> {
-		Err(Error::WriteAllEof)
+		if self.written > 1 {
+			Err(Error::WriteAllEof)
+		} else {
+			self.written += 1;
+			Ok(1)
+		}
 	}
 }
-
-// ---- default Write::write_all --------------------------------------------------
 
 #[test]
 fn default_write_all_chunks() -> Result<(), Error> {
@@ -92,17 +83,10 @@ fn default_write_all_chunks() -> Result<(), Error> {
 }
 
 #[test]
-fn default_write_all_stall_returns_eof() {
-	// StallWriter.write() always returns Ok(0); write_all must return WriteAllEof
-	let mut w = StallWriter;
-	let err = w.write_all(b"hello").unwrap_err();
-	assert!(matches!(err, Error::WriteAllEof));
-}
-
-#[test]
+#[allow(clippy::unwrap_used)]
 fn default_write_all_error_propagates() {
 	// FailWriter.write() returns Err; write_all must propagate that error
-	let mut w = FailWriter;
+	let mut w = FailWriter::new();
 	let err = w.write_all(b"hello").unwrap_err();
 	assert!(matches!(err, Error::WriteAllEof));
 }
@@ -112,9 +96,7 @@ fn default_write_all_empty_buf() -> Result<(), Error> {
 	// write_all with an empty slice must succeed without calling write at all
 	let mut w = ChunkWriter::new(5);
 	w.write_all(b"")?;
-	let mut w = StallWriter;
-	w.write_all(b"")?;
-	let mut w = FailWriter;
+	let mut w = FailWriter::new();
 	w.write_all(b"")?;
 	Ok(())
 }

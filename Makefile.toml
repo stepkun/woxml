@@ -10,11 +10,10 @@ command = "cargo"
 args = [
     "llvm-cov",
     "test",
-    "--json",
+    "--no-clean",
+    "--lcov",
     "--output-path",
-    "mcdc/mcdc.json",
-    #"--html",
-    "--color=always",
+    "coverage/lcov.info",
     "--all-features",
     "--all-targets",
     "--show-missing-lines",
@@ -25,28 +24,28 @@ args = [
     #"--offline",
 ]
 
-[tasks.cov-summary]
-toolchain = "nightly"
-#install_crate = "cargo-llvm-cov"
-command = "cargo"
-args = [
-    "llvm-cov",
-    "test",
-    "--no-clean",
-    "--json",                # for summary-only!
-    "--summary-only",
-    "--output-path",
-    "mcdc/summary.json",
-    "--color=always",
-    "--all-features",
-    "--all-targets",
-    "--show-missing-lines",
-    "--show-instantiations",
-    "--branch",              # currently unstable, superceeded by --mcdc, not usable together
-    #"--mcdc",                # currently unstable, does not work
-    #"--locked",
-    "--workspace",
-]
+# [tasks.cov-summary]
+# toolchain = "nightly"
+# #install_crate = "cargo-llvm-cov"
+# command = "cargo"
+# args = [
+#     "llvm-cov",
+#     "test",
+#     "--no-clean",
+#     "--json",                # for summary-only!
+#     "--summary-only",
+#     "--output-path",
+#     "coverage/summary.json",
+#     "--color=always",
+#     "--all-features",
+#     "--all-targets",
+#     "--show-missing-lines",
+#     "--show-instantiations",
+#     "--branch",              # currently unstable, superceeded by --mcdc, not usable together
+#     #"--mcdc",                # currently unstable, does not work
+#     #"--locked",
+#     "--workspace",
+# ]
 
 [tasks.cov-html]
 toolchain = "nightly"
@@ -55,9 +54,10 @@ command = "cargo"
 args = [
     "llvm-cov",
     "test",
+    #"--no-clean",
     "--html",
     #"--output-dir",
-    #"mcdc",
+    #"coverage",
     "--color=always",
     "--all-features",
     "--all-targets",

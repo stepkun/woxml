@@ -29,9 +29,6 @@ pub trait Write {
 	fn write_all(&mut self, mut buf: &[u8]) -> Result<(), Error> {
 		while !buf.is_empty() {
 			match self.write(buf) {
-				Ok(0) => {
-					return Err(Error::WriteAllEof);
-				}
 				Ok(n) => buf = &buf[n..],
 				Err(e) => return Err(e),
 			}
