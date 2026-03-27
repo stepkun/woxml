@@ -39,7 +39,7 @@ pub trait Write {
 
 //==== Implementations ====
 
-/// [`Write`] implementation for [`Vec<u8>`].
+/// [`Write`] implementation for [`Vec<u8>`](alloc::vec::Vec).
 impl Write for alloc::vec::Vec<u8> {
 	#[inline]
 	fn flush(&mut self) -> Result<(), Error> {

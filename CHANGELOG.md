@@ -18,6 +18,9 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ## [0.5.0] - 2026-??-??
 
+### Added
+- Code coverage via `cargo make cov` or `cargo make cov-html`
+
 ### Changed
 - use ariel-os v0.4.0 for embedded tests
 - use `thiserror` v2 with defaults = false
