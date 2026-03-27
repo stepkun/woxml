@@ -1,16 +1,17 @@
-# woxml::XmlWriter
+# `woxml::XmlWriter`
 The `XmlWriter` is designed to write xml in an efficient way without any DOM or other intermediate structures.<br/>
 
-The implementation is based on the crate [xml_writer](https://github.com/pzol/xml_writer) by Piotr Zolnierek,
-but can also be used in 'no_std' environments (use 'default-features = false').<br/>
+The implementation is based on the crate [xml_writer](https://github.com/pzol/xml_writer) by Piotr Zolnierek, 
+but can also be used in `no_std` environments (use 'default-features = false').<br/>
 
-It is not an exact drop-in-replacement for xml_writer's XmlWriter as the access to interiors is prohibitet, 
-you have to use different constructors and accessors respectively.
-It also is not yet possible to use it for all 'std::io::Write' implementors, missing ones can be added in future versions.
-
-It works for:
-- Vec<u8>
-- bytes::BytesMut
+It is not an exact drop-in-replacement for `xml_writer`'s `XmlWriter` as the access to interiors is prohibitet, you have to use different constructors and accessors respectively.
+It also is not possible to use it for all `std::io::Write` implementors, 
+as it is also usable in `#[no_std]` environments. 
+There is an own `Write` trait, which currently is implemented by the crate for
+- `Vec<u8>`
+- `bytes::BytesMut`.
+Future versions will add further implementations of `Write`. 
+If you need a missing implementation, please file an issue or create a pull request.
 
 ## Usage
 
@@ -18,7 +19,7 @@ It works for:
 extern crate woxml;
 use woxml::XmlWriter;
 
-let mut xml = XmlWriter::pretty_mode(Vec::new()); // supply a woxml::Write implementor
+let mut xml = XmlWriter::pretty_mode(Vec::new()); // supply a `woxml::Write` implementor
 xml.begin_elem("root");
     xml.comment("have a nice day");
     xml.begin_elem("first");

@@ -2,18 +2,25 @@
 [package]
 resolver = "3"
 name = "woxml"
-version = "0.4.2"
+version = "0.5.0"
 edition = "2024"
 license = "MIT/Apache-2.0"
 authors = ["stepkun <stephan.kunz@kabelbw.de>"]
 description = "write only xml"
-repository = "https://github.com/stepkun/woxml.git"
-homepage = "https://github.com/stepkun/woxml.git"
+repository = "https://github.com/dibbots/woxml.git"
+homepage = "https://dibbots.com/"
 documentation = "https://docs.rs/woxml"
 readme = "README.md"
 keywords = ["xml"]
 categories = ["development-tools"]
-exclude = ["laze*", "benches/**", "embedded/**", "examples/**", "tests/**"]
+exclude = [
+  "laze*",
+  "benches/**",
+  "coverage/**",
+  "embedded/**",
+  "examples/**",
+  "tests/**",
+]
 
 [lib]
 name = "woxml"
@@ -22,6 +29,7 @@ name = "woxml"
 missing_docs = "warn"
 unexpected_cfgs = { level = "warn", check-cfg = [
   'cfg(context, values(any()))',
+  #'cfg(coverage_nightly)',
 ] }
 unsafe_code = "warn"
 unused_must_use = "warn"
@@ -44,12 +52,13 @@ harness = false
 
 [dependencies]
 bytes = { version = "1", default-features = false }
+thiserror = { version = "2", default-features = false }
 
 [build-dependencies]
 
 [dev-dependencies]
-criterion = "0.8.1"
+criterion = "0.8"
 
 [features]
 default = ["std"]
-std = ["bytes/std"]
+std = ["bytes/std", "thiserror/std"]
