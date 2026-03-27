@@ -16,7 +16,7 @@ especially the [Rust flavour](https://doc.rust-lang.org/cargo/reference/semver.h
 
 ### Removed
 
-## [0.5.0] - 2026-??-??
+## [0.5.0] - 2026-03-27
 
 ### Added
 - Code coverage via `cargo make cov` or `cargo make cov-html`
